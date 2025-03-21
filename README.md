@@ -6,7 +6,7 @@
 [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=Laragear_Turnstile&metric=alert_status)](https://sonarcloud.io/dashboard?id=Laragear_Turnstile)
 [![Laravel Octane Compatibility](https://img.shields.io/badge/Laravel%20Octane-Compatible-success?style=flat&logo=laravel)](https://laravel.com/docs/11.x/octane#introduction)
 
-Use Cloduflare's no-CAPTCHA alternative in your Laravel application.
+Use Cloudflare's no-CAPTCHA alternative in your Laravel application.
 
 ```php
 use Illuminate\Support\Facades\Route;
