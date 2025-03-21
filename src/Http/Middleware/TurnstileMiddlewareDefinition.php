@@ -5,7 +5,6 @@ namespace Laragear\Turnstile\Http\Middleware;
 use Illuminate\Support\Arr;
 use Stringable;
 use function implode;
-use function in_array;
 
 class TurnstileMiddlewareDefinition implements Stringable
 {

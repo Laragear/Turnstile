@@ -9,13 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laragear\Turnstile\Turnstile;
-use function array_map;
-use function array_pad;
 use function explode;
-use function implode;
-use function in_array;
 use function is_string;
-use function trim;
 
 /**
  * @method static \Laragear\Turnstile\Http\Middleware\TurnstileMiddlewareDefinition auth($guards = null)

@@ -6,13 +6,16 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Laragear\Turnstile\Challenge;
+use Laragear\Turnstile\Enums\SecretKey;
+use Laragear\Turnstile\Enums\SiteKey;
 use Laragear\Turnstile\Exceptions\InvalidChallengeException;
 use Laragear\Turnstile\Turnstile;
 use Laragear\Turnstile\Validation\TurnstileRule;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
-use function json_encode;
+use function array_map;
 use function now;
 
 class TurnstileTest extends TestCase
@@ -85,14 +88,14 @@ class TurnstileTest extends TestCase
 
     public function test_retrieves_challenge_using_token(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -110,7 +113,7 @@ class TurnstileTest extends TestCase
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -137,14 +140,14 @@ class TurnstileTest extends TestCase
 
     public function test_retrieves_challenge_using_token_and_ip(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -153,14 +156,14 @@ class TurnstileTest extends TestCase
 
     public function test_retrieves_challenge_using_token_and_idempotency_key(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token', 'idempotency_key' => 'test_key'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token', 'idempotency_key' => 'test_key'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -169,14 +172,14 @@ class TurnstileTest extends TestCase
 
     public function test_fills_challenge_from_http_response(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse([
                     'success' => false,
                     'action' => 'test_action',
@@ -199,14 +202,14 @@ class TurnstileTest extends TestCase
 
     public function test_throws_on_server_error(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse([
                     'success' => false,
                     'errors' => ['internal-error'],
@@ -230,14 +233,14 @@ class TurnstileTest extends TestCase
     #[DataProvider('provideClientErrors')]
     public function test_throws_on_backend_error(string $error): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) use ($error) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse([
                     'success' => false,
                     'errors' => [$error],
@@ -252,7 +255,7 @@ class TurnstileTest extends TestCase
 
     public function test_saves_challenge_into_container(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         static::assertFalse($this->app->bound(Challenge::class));
 
@@ -261,7 +264,7 @@ class TurnstileTest extends TestCase
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -272,7 +275,7 @@ class TurnstileTest extends TestCase
 
     public function test_saves_failed_challenge_into_container(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         static::assertFalse($this->app->bound(Challenge::class));
 
@@ -281,7 +284,7 @@ class TurnstileTest extends TestCase
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token'],
                 )->andReturn($this->guzzleResponse(['success' => false]));
         });
 
@@ -292,7 +295,7 @@ class TurnstileTest extends TestCase
 
     public function test_get_challenge_from_current_request(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->app->instance(
             'request', Request::create($this->prepareUrlForRequest('/'), 'POST', [Turnstile::KEY => 'test_token'])
@@ -303,7 +306,7 @@ class TurnstileTest extends TestCase
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -314,14 +317,14 @@ class TurnstileTest extends TestCase
 
     public function test_gets_challenge_from_request_instance(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock
                 ->expects('asJson->acceptJson->withOptions->post')
                 ->with(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    ['secret' => Turnstile::SECRET_KEY, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
+                    ['secret' => SecretKey::Passing->value, 'response' => 'test_token', 'remoteip' => '127.0.0.1'],
                 )->andReturn($this->guzzleResponse());
         });
 
@@ -365,7 +368,7 @@ class TurnstileTest extends TestCase
 
     public function test_doesnt_fakes_challenge_outside_testing(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
 
         $this->mock(HttpFactory::class, function (MockInterface $mock) {
             $mock->expects('fake')->never();
@@ -393,7 +396,7 @@ class TurnstileTest extends TestCase
 
     public function test_fakes_challenge_on_testing(): void
     {
-        $this->app->instance('env', 'not-testing');
+        $this->app->instance('env', 'not-production-nor-testing');
         $this->app->make('config')->set('turnstile.env', 'testing');
 
         $this->partialMock(HttpFactory::class, function (MockInterface $mock) {
@@ -425,7 +428,7 @@ class TurnstileTest extends TestCase
     {
         $this->app->instance('env', $environment);
 
-        static::assertSame(Turnstile::SITE_KEY, $this->turnstile()->getSiteKey());
+        static::assertSame(SiteKey::VisiblePassing->value, $this->turnstile()->getSiteKey());
     }
 
     public function test_retrieves_challenge_from_container(): void
@@ -462,5 +465,40 @@ class TurnstileTest extends TestCase
         $this->turnstile()->flushChallenge();
 
         static::assertFalse($this->turnstile()->hasChallenge());
+    }
+
+    public static function provideTestingSiteKeys(): array
+    {
+        return array_map(Arr::wrap(...), SiteKey::cases());
+    }
+
+    #[DataProvider('provideTestingSiteKeys')]
+    public function test_uses_testing_site_key(SiteKey $key): void
+    {
+        $this->turnstile()->useTestingSiteKey($key);
+
+        static::assertSame($key->value, $this->turnstile()->getSiteKey());
+    }
+
+    public static function provideTestingSecretKeys(): array
+    {
+        return array_map(Arr::wrap(...), SecretKey::cases());
+    }
+
+    #[DataProvider('provideTestingSecretKeys')]
+    public function test_uses_testing_secret_key(SecretKey $key): void
+    {
+        $this->app->instance('env', 'not-production-nor-testing');
+
+        $this->mock(HttpFactory::class, function (MockInterface $mock) use ($key): void {
+            $mock
+                ->expects('asJson->acceptJson->withOptions->post')
+                ->with(
+                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                    ['secret' => $key->value, 'response' => 'test_token'],
+                )->andReturn($this->guzzleResponse());
+        });
+
+        $this->turnstile()->useTestingSecretKey($key)->getChallenge('test_token');
     }
 }

@@ -3,7 +3,6 @@
 namespace Tests\Http\Requests;
 
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Route;
 use Laragear\Turnstile\Challenge;
 use Laragear\Turnstile\Http\Requests\TurnstileRequest;
 use Laragear\Turnstile\Turnstile;
@@ -23,6 +22,7 @@ class TurnstileRequestTest extends TestCase
     {
         $this->post('test', [Turnstile::KEY => 'test_key'])->assertStatus(200)->assertSee('1');
     }
+
     public function test_request_json_passes(): void
     {
         $this->postJson('test', [Turnstile::KEY => 'test_key'])->assertStatus(200)->assertSee('1');

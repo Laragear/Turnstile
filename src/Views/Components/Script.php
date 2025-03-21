@@ -22,7 +22,7 @@ class Script extends Component
     public function __construct(
         protected Turnstile $turnstile,
         public bool $explicit = false,
-        public string $onload = '',
+        public ?string $onload = null,
         public bool $async = true,
         public bool $defer = true,
     )

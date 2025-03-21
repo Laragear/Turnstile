@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 use Laragear\Turnstile\Turnstile;
 use Stringable;
 use function array_pad;
-use function blank;
 use function in_array;
 use function is_string;
 

@@ -4,8 +4,6 @@ namespace Laragear\Turnstile;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
-use Illuminate\Http\Client\Factory;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
@@ -31,7 +29,7 @@ class TurnstileServiceProvider extends ServiceProvider
 
         // Remove the challenge when the application lifecycle ends.
         $this->app->terminating(static function (Application $app) {
-            $app->instance(Challenge::class, null);
+            unset($app[Challenge::class]);
         });
     }
 
@@ -45,7 +43,6 @@ class TurnstileServiceProvider extends ServiceProvider
         );
 
         if ($this->app->runningInConsole()) {
-            // @phpstan-ignore-next-line
             $this->publishes([static::CONFIG => $this->app->configPath('turnstile.php')], 'config');
             $this->publishes([static::LANG => $this->app->langPath('vendor/turnstile')], 'lang');
         }

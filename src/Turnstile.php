@@ -12,6 +12,8 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\ResponseSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\DateFactory;
+use Laragear\Turnstile\Enums\SecretKey;
+use Laragear\Turnstile\Enums\SiteKey;
 use Laragear\Turnstile\Exceptions\InvalidChallengeException;
 use function array_filter;
 use function array_merge;
@@ -38,20 +40,6 @@ class Turnstile
     public const KEY = 'cf-turnstile-response';
 
     /**
-     * Testing site key that always resolves to true
-     *
-     * @const string
-     */
-    public const SITE_KEY = '1x00000000000000000000AA';
-
-    /**
-     * Testing secret key that always returns successful challenges.
-     *
-     * @const string
-     */
-    public const SECRET_KEY = '1x0000000000000000000000000000000AA';
-
-    /**
      * The Cloudflare Turnstile Site Verify endpoint.
      *
      * @const string
@@ -73,10 +61,35 @@ class Turnstile
         protected readonly Factory $http,
         protected readonly Repository $config,
         protected readonly DateFactory $date,
+        protected Enums\SiteKey $testingSiteKey = SiteKey::VisiblePassing,
+        protected Enums\SecretKey $testingSecretKey = SecretKey::Passing,
         protected array $fakedResponse = [],
         protected bool $shouldFake = false
     ) {
         // ...
+    }
+
+    /**
+     * Use the given Testing Site Key for rendering challenges on the frontend.
+     *
+     * @return $this
+     */
+    public function useTestingSiteKey(SiteKey $key): static
+    {
+        $this->testingSiteKey = $key;
+
+        return $this;
+    }
+
+    /**
+     * USe the given Testing Secret Key for retrieving challenges from the backend.
+     * @return $this
+     */
+    public function useTestingSecretKey(SecretKey $key): static
+    {
+        $this->testingSecretKey = $key;
+
+        return $this;
     }
 
     /**
@@ -162,7 +175,6 @@ class Turnstile
     /**
      * Retrieves the Challenge response from Turnstile servers.
      *
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @throws \Illuminate\Http\Client\ConnectionException
      * @throws \Illuminate\Http\Client\RequestException
      */
@@ -176,7 +188,7 @@ class Turnstile
             ->asJson()
             ->acceptJson()
             ->withOptions(array_merge($this->config->get('turnstile.client'), $options))
-            ->post(static::ENDPOINT, array_filter([ // @phpstan-ignore-line
+            ->post(static::ENDPOINT, array_filter([
                 'secret' => $this->getSecretKey(),
                 'response' => $token,
                 'remoteip' => $ip,
@@ -256,7 +268,7 @@ class Turnstile
         $key = $this->config->get('turnstile.site_key');
 
         if ($this->currentEnvironment() !== 'production') {
-            $key ??= static::SITE_KEY;
+            $key ??= $this->testingSiteKey->value;
         }
 
         return $key;
@@ -270,7 +282,7 @@ class Turnstile
         $key = $this->config->get('turnstile.secret_key');
 
         if ($this->currentEnvironment() !== 'production') {
-            $key ??= static::SECRET_KEY;
+            $key ??= $this->testingSecretKey->value;
         }
 
         return $key;
@@ -309,7 +321,7 @@ class Turnstile
      */
     public function flushChallenge(): void
     {
-        $this->container->instance(Challenge::class, null);
+        unset($this->container[Challenge::class]); // @phpstan-ignore-line
     }
 
     /**

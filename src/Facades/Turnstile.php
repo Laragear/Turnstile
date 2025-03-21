@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Laragear\Turnstile\Challenge getChallenge(string $token, string $ip = '', string $idempotencyKey = '', array $options = [], bool $save = true)
  * @method static \Laragear\Turnstile\Challenge getChallengeFromRequest(\Illuminate\Http\Request|null $request = null, string $key = '', string $idempotencyKey = '', array $options = [], bool $store = true)
  * @method static \Laragear\Turnstile\Challenge challenge()
+ * @method static \Laragear\Turnstile\Turnstile useTestingSiteKey(\Laragear\Turnstile\Enums\SiteKey $key)
+ * @method static \Laragear\Turnstile\Turnstile useTestingSecretKey(\Laragear\Turnstile\Enums\SecretKey $key)
  * @method static string key()
  * @method static string rule()
  * @method static array rules()
