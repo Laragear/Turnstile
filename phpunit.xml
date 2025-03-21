@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="vendor/autoload.php" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd" cacheDirectory=".phpunit.cache">
+  <coverage>
+    <report>
+      <clover outputFile="build/logs/clover.xml"/>
+    </report>
+  </coverage>
+  <testsuites>
+    <testsuite name="Test Suite">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+  <php>
+    <env name="APP_DEBUG" value="true"/>
+    <env name="APP_KEY" value="base64:Q8Ey6mJ7UJ26St3s5XrJa62zfjRzJQEie8NBBc0aJqk="/>
+  </php>
+  <source>
+    <include>
+      <directory>src/</directory>
+    </include>
+  </source>
+</phpunit>

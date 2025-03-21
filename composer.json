@@ -1,0 +1,77 @@
+{
+    "name": "laragear/turnstile",
+    "description": "Integrate Captcha with a few lines.",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "keywords": [
+        "laragear",
+        "turnstile",
+        "captcha",
+        "cloudflare",
+        "http2",
+        "http3"
+    ],
+    "authors": [
+        {
+            "name": "Italo Israel Baeza Cabrera",
+            "email": "darkghosthunter@gmail.com",
+            "homepage": "https://github.com/sponsors/DarkGhostHunter"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/Laragear/Turnstile",
+        "issues": "https://github.com/Laragear/Turnstile/issues"
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "illuminate/support": "11.*|12.*",
+        "illuminate/http": "11.*|12.*",
+        "illuminate/routing": "11.*|12.*",
+        "illuminate/container": "11.*|12.*",
+        "illuminate/events": "11.*|12.*",
+        "illuminate/session": "11.*|12.*"
+    },
+    "require-dev": {
+        "orchestra/testbench": "9.*|10.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laragear\\Turnstile\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laragear\\Turnstile\\TurnstileServiceProvider"
+            ],
+            "aliases": {
+                "Turnstile": "Laragear\\Turnstile\\Facades\\Turnstile"
+            }
+        }
+    },
+    "funding": [
+        {
+            "type": "Github Sponsorship",
+            "url": "https://github.com/sponsors/DarkGhostHunter"
+        },
+        {
+            "type": "Paypal",
+            "url": "https://paypal.me/darkghosthunter"
+        }
+    ]
+}
