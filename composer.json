@@ -1,6 +1,6 @@
 {
     "name": "laragear/turnstile",
-    "description": "Integrate Captcha with a few lines.",
+    "description": "Use Cloudflare's no-CAPTCHA alternative in your Laravel application.",
     "type": "library",
     "license": "MIT",
     "minimum-stability": "dev",
