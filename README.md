@@ -127,6 +127,42 @@ You can pass HTML attributes and [data attributes](https://developers.cloudflare
 >
 > Classes are automatically appended, so you shouldn't worry about overwriting the `cf-turnstile` class used by the Widget to render.
 
+### Retrieving the Site Key
+
+If you're using a custom JavaScript frontend, you may require your Site Key available _somewhere_ so the frontend library can use it. You may do that by just simply using the `siteKey()` method of the `Turnstile` facade inside the `<meta>` header in your main HTML view.
+
+```blade
+@php
+    use Laragear\Turnstile\Facades\Turnstile;
+@endphp
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My awesome app</title>
+    <meta name="turnstile-site-key" content="{{ Turnstile::sitekey() }}">
+</head>
+<body>
+    // ...
+</body>
+</html>
+```
+
+Then later you will be able to retrieve the site key through Javascript.
+
+```vue
+<script setup>
+const siteKey = document.querySelector('meta[name="test-tag"]').content;
+
+// ...
+</script>
+
+<template>
+    <div class="cf-turnstile shadow-lg" :data-sitekey="siteKey"></div>
+</template>
+```
+
 ## Backend integration
 
 When issuing a form, you have three alternatives to ensure the Turnstile challenge is valid and successful, from the easiest to the more flexible:
