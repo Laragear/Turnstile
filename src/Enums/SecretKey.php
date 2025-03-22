@@ -2,7 +2,7 @@
 
 namespace Laragear\Turnstile\Enums;
 
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 enum SecretKey: string
 {

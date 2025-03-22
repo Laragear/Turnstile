@@ -33,7 +33,7 @@ class TurnstileRequest extends FormRequest
         $turnstile = $this->container->make(Turnstile::class);
 
         // Create a new validator with overridable the messages and attribute names.
-        $validator = $this->container->make('validator')->make( // @phpstan-ignore-line
+        $validator = $this->container->make('validator')->make(
             $this->only($turnstile->key()), $turnstile->rules(), $this->messages(), $this->attributes(),
         )->stopOnFirstFailure($this->stopOnFirstFailure);
 
