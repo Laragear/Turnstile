@@ -141,7 +141,7 @@ If you're using a custom JavaScript frontend, you may require your Site Key avai
 <head>
     <meta charset="UTF-8">
     <title>My awesome app</title>
-    <meta name="turnstile-site-key" content="{{ Turnstile::sitekey() }}">
+    <meta name="turnstile-sitekey" content="{{ Turnstile::sitekey() }}">
 </head>
 <body>
     // ...
@@ -153,7 +153,7 @@ Then later you will be able to retrieve the site key through Javascript.
 
 ```vue
 <script setup>
-const siteKey = document.querySelector('meta[name="test-tag"]').content;
+const siteKey = document.querySelector('meta[name="turnstile-sitekey"]').content;
 
 // ...
 </script>
