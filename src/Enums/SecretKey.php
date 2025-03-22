@@ -13,7 +13,7 @@ enum SecretKey: string
     /**
      * Returns the enum cases as a Collection.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return \Illuminate\Support\Collection<int, static>
      */
     public static function collect(): Collection
     {

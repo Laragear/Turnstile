@@ -216,10 +216,7 @@ class TurnstileRequestTest extends TestCase
         try {
             $request->validateResolved();
         } catch (ValidationException $e) {
-            static::assertSame(
-                'test_message test_attribute',
-                $e->validator->getMessageBag()->get(Turnstile::KEY)[0]
-            );
+            static::assertSame('test_message test_attribute', $e->validator->getMessageBag()->get(Turnstile::KEY)[0]);
 
             throw $e;
         }
@@ -227,11 +224,9 @@ class TurnstileRequestTest extends TestCase
 
     public function test_doesnt_validates_challenge_on_precognition(): void
     {
-        // $this->expectNotToPerformAssertions();
-
         $this->mock(Turnstile::class, function (MockInterface $mock) {
-            $mock->expects('key')->andReturn(Turnstile::KEY);
-            $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
+            $mock->expects('key')->never();
+            $mock->expects('rules')->never();
             $mock->expects('isDisabled')->never();
             $mock->expects('getChallenge')->never();
         });
@@ -256,6 +251,57 @@ class TurnstileRequestTest extends TestCase
             }
         }
     }
+
+    public function test_checks_challenge_on_precognition(): void
+    {
+        $this->mock(Turnstile::class, function (MockInterface $mock) {
+            $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->andReturn(Turnstile::KEY);
+            $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
+            $mock->expects('getChallenge')->andReturn(new Challenge(
+                true, '', '', '', [], [], new Carbon(),
+            ));
+        });
+
+        $request = TestTurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_token'])
+            ->setContainer($this->app);
+
+        $request->headers->set('Precognition-Validate-Only', 'not-turnstile');
+        $request->attributes->set('precognitive', true);
+        $request->skipWhenPrecognitive = false;
+
+        try {
+            $request->validateResolved();
+        } catch (Throwable $e) {
+            if (method_exists($e, 'getStatusCode') && method_exists($e, 'getHeaders')) {
+                static::assertSame(204, $e->getStatusCode());
+                static::assertArrayHasKey('Precognition-Success', $e->getHeaders());
+                static::assertSame('true', $e->getHeaders()['Precognition-Success']);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    public function test_uses_custom_key_and_rules(): void
+    {
+        $this->mock(Turnstile::class, function (MockInterface $mock) {
+            $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->never();
+            $mock->expects('rules')->never();
+            $mock->expects('getChallenge')->with('test_token', '127.0.0.1')->andReturn(new Challenge(
+                false, '', '', '', [], [], new Carbon(),
+            ));
+        });
+
+        $request = TestCustomKeyAndRulesTurnstileRequest::create('/', 'POST', ['test-key' => 'test_token'])
+            ->setContainer($this->app);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
+
+        $request->validateResolved();
+    }
 }
 
 class TestTurnstileRequest extends TurnstileRequest
@@ -269,6 +315,13 @@ class TestTurnstileRequest extends TurnstileRequest
         return [
             'test' => 'required|string',
         ];
+    }
+
+    public bool $skipWhenPrecognitive = true;
+
+    protected function skipChallengeWhenPrecognitive(): bool
+    {
+        return $this->skipWhenPrecognitive;
     }
 }
 
@@ -286,5 +339,18 @@ class TestMessagesAndAttributesTurnstileRequest extends TurnstileRequest
         return [
             Turnstile::KEY => 'test_attribute',
         ];
+    }
+}
+
+class TestCustomKeyAndRulesTurnstileRequest extends TurnstileRequest
+{
+    protected function getTurnstileKey(): string
+    {
+        return 'test-key';
+    }
+
+    protected function getTurnstileRules(): array|string
+    {
+        return [fn($attribute, $value, $fail) => $value === 'test_token' || $fail(), 'turnstile'];
     }
 }

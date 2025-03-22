@@ -184,7 +184,7 @@ When issuing a form, you have three alternatives to ensure the Turnstile challen
 
 ### Validating with Request
 
-The easiest and less intrusive way to check the Turnstile challenge is to use the `Laragear\Turnstile\Http\Requests\TurnstileRequest` instance in your controller. This is great if you only have a few controllers where you want to check for a successful Turnstile Challenge.
+The easiest and least intrusive way to check the Turnstile Challenge is to use the `Laragear\Turnstile\Http\Requests\TurnstileRequest` instance in your controller. This is great if you only have a few controllers where you want to stop bots.
 
 ```php
 use App\Models\Comment;
@@ -200,7 +200,7 @@ Route::post('comment', function (TurnstileRequest $request) {
 })
 ```
 
-You can have access to the Cloudflare Turnstile Challenge object through the `challenge()` method. For example, you may use it to double-check if the action is equal to something you expect.
+You can have access to the Cloudflare Turnstile Challenge object through the `challenge()` method, plus additional helpers for the Challenge instance itself. For example, you may use it to double-check if the action is equal to something you expect.
 
 ```php
 use App\Models\Comment;
@@ -212,7 +212,7 @@ Route::post('comment', function (TurnstileRequest $request) {
         'body' => 'required|string'
     ]);
     
-    if ($request->challenge()->isAction('comment:store')) {
+    if ($request->isAction('comment:store')) {
         return back()->withErrors('Invalid action');
     }
     
@@ -222,11 +222,11 @@ Route::post('comment', function (TurnstileRequest $request) {
 
 > [!IMPORTANT]
 > 
-> The Request will check for the `cf-turnstile-response` key [by default](#form-key), plus a successful Challenge. If you need more fine-tuning, consider using the [middleware](#validating-with-middleware), [rule](#validating-with-rule), or [validating manually](#validating-manually).
+> The Request will check for the `cf-turnstile-response` key [by default](#form-key), plus a successful Challenge. If you need more fine-tuning, you may [extend the form request class](#extending-the-form-request). Alternatively, you may also use a [middleware](#validating-with-middleware), [rule](#validating-with-rule), or [validate manually](#validating-manually).
 
 #### Extending the Form Request
 
-If you need to create a form request and also validate the Turnstile Challenge, you may safely extend the `TurnstileRequest` instead. The class runs the validation _before_ your form request authorization and rules.
+If you need to create a form request and also validate the Turnstile Challenge, you may safely extend the `TurnstileRequest` instead of the base `FormRequest`. The class runs the validation _before_ your form request authorization and rules to avoid running side effects. 
 
 ```php
 namespace App\Http\Requests;
@@ -244,7 +244,7 @@ class CommentStoreRequest extends TurnstileRequest
 }
 ```
 
-This means your controller can safely retrieve the validated data using `$request->validated()`.
+This means your controller can safely retrieve the validated data using `$request->validated()`, as the token won't be considered part of the Request itself.
 
 ```php
 use App\Models\Comment;
@@ -254,6 +254,54 @@ use App\Http\Requests\CommentStoreRequest;
 Route::post('comment', function (CommentStoreRequest $request) {
     return Comment::create($request->validated());
 })
+```
+
+#### Custom key and rules
+
+You may also edit the key and the rules where to find and check the Response Token in the request. For the case of rules, ensure you're using [the `turnstile` rule](#validating-with-rule).
+
+```php
+namespace App\Http\Requests;
+
+use Laragear\Turnstile\Http\Requests\TurnstileRequest;
+
+class CommentStoreRequest extends TurnstileRequest
+{
+    public function getTurnstileKey()
+    {
+        return '_cf-custom-key';
+    }
+    
+    protected function getTurnstileRules()
+    {
+        // Skip if the user is authenticated.
+        return 'turnstile:auth'
+    }
+    
+    // ...
+}
+```
+
+#### Precognitive request
+
+The `TurnstileRequest` won't check for the Challenge Token on [Precognitive Requests](https://laravel.com/docs/12.x/precognition), which is useful to not disrupt [live-validation](https://laravel.com/docs/12.x/precognition#live-validation).
+
+If you require custom validation on precognitive requests, you may override the `skipChallengeWhenPrecognitive()` method.
+
+```php
+namespace App\Http\Requests;
+
+use Laragear\Turnstile\Http\Requests\TurnstileRequest;
+
+class CommentStoreRequest extends TurnstileRequest
+{
+    protected function skipChallengeWhenPrecognitive(): bool
+    {
+        return $this->hasHeader('Requires-CF-Turnstile-Challenge');
+    }
+    
+    // ...
+}
 ```
 
 ### Validating with Middleware
@@ -273,7 +321,7 @@ Route::post('comment', function (Request $request) {
 > 
 > Is not suggested to use the middleware on `GET` methods or similar. Some browsers (or extensions) may _cache_ or _inspect_ ahead document links. 
 
-If you want to configure the middleware behaviour, you should use the `TurnstileMiddleware` class and the static methods.
+If you want to configure the middleware behaviour, you should use the `TurnstileMiddleware` class and the static helper methods.
 
 ```php
 use Illuminate\Http\Request;
@@ -366,9 +414,24 @@ Route::post('comment', function (Request $request) {
 })->middleware(TurnstileMiddleware::action('comment:store'));
 ```
 
+#### Validating on Precognitive
+
+By default, the middleware will [skip running on Precognitive requests](https://laravel.com/docs/12.x/precognition#managing-side-effects). If you want to run it, set the `TurnstileMiddleware::onPrecognitive()` option, especially if your validation has side effects.
+
+```php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Laragear\Turnstile\Http\Middleware\TurnstileMiddleware;
+
+Route::post('comment', function (Request $request) {
+    // ...
+})->middleware(TurnstileMiddleware::onPrecognitive());
+```
+
+
 ### Validating with Rule
 
-You can use the `turnstile` rule to check if the Turnstile challenge is present and is successful. The easiest way is to unpack the default rule contained in the `rules()` method of the `Turnstile` facade.
+You can use the `turnstile` rule to check if the Turnstile challenge is present and is successful in the data to validate. The easiest way is to unpack the default rule contained in the `rules()` method of the `Turnstile` facade.
 
 ```php
 use Illuminate\Http\Request;
@@ -454,9 +517,9 @@ public function create(Request $request)
 
 > [!IMPORTANT]
 >
-> The challenge is automatically retrieved by the [request](#validating-with-request), [middleware](#validating-with-middleware) and [rule](#validating-with-rule). If that's case, you may [use the `challenge()` method](#retrieving-an-already-received-challenge).
+> The challenge is automatically retrieved by the [request](#validating-with-request), [middleware](#validating-with-middleware) and [rule](#validating-with-rule). If that's case, you may [use the `challenge()` method](#retrieving-an-already-received-challenge) instead.
 
-To validate the Challenge manually, first you require the Turnstile Response Token that is sent by the frontend, and optionally the IP of the Request.
+To validate the Challenge manually, you require the Turnstile Response Token that is sent by the frontend, and optionally the IP of the Request.
 
 Once identified, you should use the `getChallenge()` method of `Turnstile` facade to retrieve the Challenge from Cloudflare Turnstile servers.
 

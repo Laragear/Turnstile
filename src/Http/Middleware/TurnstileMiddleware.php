@@ -17,6 +17,7 @@ use function is_string;
  * @method static \Laragear\Turnstile\Http\Middleware\TurnstileMiddlewareDefinition input(string $name)
  * @method static \Laragear\Turnstile\Http\Middleware\TurnstileMiddlewareDefinition acceptFailed()
  * @method static \Laragear\Turnstile\Http\Middleware\TurnstileMiddlewareDefinition action(string $action)
+ * @method static \Laragear\Turnstile\Http\Middleware\TurnstileMiddlewareDefinition onPrecognitive()
  */
 class TurnstileMiddleware
 {

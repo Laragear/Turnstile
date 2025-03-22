@@ -11,7 +11,6 @@ class TurnstileRequest extends FormRequest
     /**
      * Validate the class instance.
      *
-     * @return void
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public function validateResolved(): void
@@ -24,27 +23,56 @@ class TurnstileRequest extends FormRequest
     /**
      * Checks if the Cloudflare Turnstile challenge is valid through the validation rule.
      *
-     * @return void
+     * @internal
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     protected function checkTurnstileChallenge(): void
     {
+        // Avoid depleting the challenge response if is precognitive.
+        if ($this->isPrecognitive() && $this->skipChallengeWhenPrecognitive()) {
+            return;
+        }
+
         /** @var \Laragear\Turnstile\Turnstile $turnstile */
         $turnstile = $this->container->make(Turnstile::class);
 
+        $key = $this->getTurnstileKey() ?: $turnstile->key();
+
         // Create a new validator with overridable the messages and attribute names.
-        $validator = $this->container->make('validator')->make( // @phpstan-ignore-line
-            $this->only($turnstile->key()), $turnstile->rules(), $this->messages(), $this->attributes(),
-        )->stopOnFirstFailure($this->stopOnFirstFailure);
+        $this->container->make('validator')->make(
+            $this->only($key),
+            [$key => $this->getTurnstileRules() ?: $turnstile->rules()],
+            $this->messages(),
+            $this->attributes(),
+        )->validate();
+    }
 
-        // If the request is precognitive, filter the rules. This lets the developer add or remove
-        // the Turnstile Response Token if he sees it necessary for the precognitive request. If
-        // the filtered rules don't have the Turnstile token, the validation will pass anyway.
-        if ($this->isPrecognitive()) {
-            $validator->setRules($this->filterPrecognitiveRules($validator->getRulesWithoutPlaceholders()));
-        }
+    /**
+     * Returns the default Turnstile Response token key to find in the request. When falsy, the default will be used.
+     *
+     * @return void|string
+     */
+    protected function getTurnstileKey()
+    {
+        // ...
+    }
 
-        $validator->validate();
+    /**
+     * Returns the rules that will be used against the Turnstile Response token. When falsy, the defaults will be used.
+     *
+     * @return void|string|array<\Illuminate\Contracts\Validation\ValidationRule|string>
+     */
+    protected function getTurnstileRules()
+    {
+        // ...
+    }
+
+    /**
+     * If the Precognitive Request should check for the Turnstile Challenge.
+     */
+    protected function skipChallengeWhenPrecognitive(): bool
+    {
+        return true;
     }
 
     /**
