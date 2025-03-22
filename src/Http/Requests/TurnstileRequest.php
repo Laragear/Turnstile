@@ -28,4 +28,56 @@ class TurnstileRequest extends FormRequest
     {
         return $this->container->make(Challenge::class);
     }
+
+    /**
+     * Returns a metadata value using a key in `dot.notation`.
+     *
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    public function metadata(string $key, mixed $default = null): mixed
+    {
+        return $this->challenge()->metadata($key, $default);
+    }
+
+    /**
+     * Check if the action is the same as the developer expects.
+     *
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    public function isAction(string $action): bool
+    {
+        return $this->challenge()->isAction($action);
+    }
+
+    /**
+     * Check if the action is not the same as the developer expects.
+     *
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    public function isNotAction(string $action): bool
+    {
+        return $this->challenge()->isNotAction($action);
+    }
+
+    /**
+     * Checks if the Customer Data is the same pattern as the developer expects.
+     *
+     * @param  string|iterable<string>  $customerData
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    public function isCustomerData(string|iterable $customerData): bool
+    {
+        return $this->challenge()->isCustomerData($customerData);
+    }
+
+    /**
+     * Checks if the Customer Data is not the same pattern as the developer expects.
+     *
+     * @param  string|iterable<string>  $customerData
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    public function isNotCustomerData(string|iterable $customerData): bool
+    {
+        return $this->challenge()->isNotCustomerData($customerData);
+    }
 }
