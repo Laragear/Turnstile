@@ -90,7 +90,7 @@ Finally, you can also set a custom callback name to be executed once the script 
 
 > [!IMPORTANT]
 > 
-> Remember that the Widget Mode is controlled via your [Cloudflare Dashboard](https://dash.cloudflare.com), not here. 
+> Remember that the Widget Mode is controlled via your [Cloudflare Dashboard](https://dash.cloudflare.com), not here. On development, this is controlled with [testing keys](#testing-keys).
 
 You can use the `<x-turnstile::widget />` Blade Component to add the Turnstile Widget in your forms. Depending on the Widget Mode, the Widget may render as usual or be invisible at Turnstile discretion.
 
