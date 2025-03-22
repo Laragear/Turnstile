@@ -10,7 +10,9 @@ use Laragear\Turnstile\Turnstile;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
+use Throwable;
 use function json_encode;
+use function method_exists;
 
 class TurnstileRequestTest extends TestCase
 {
@@ -25,18 +27,21 @@ class TurnstileRequestTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
-        )->setContainer($this->app)->validateResolved();
+        TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_key'])
+            ->setContainer($this->app)
+            ->validateResolved();
     }
 
     public function test_request_json_passes(): void
     {
         $this->expectNotToPerformAssertions();
 
-        TurnstileRequest::create(uri: '/', method: 'POST', server: [
-            'CONTENT_TYPE' => 'application/json',
-        ], content: json_encode([Turnstile::KEY => 'test_key']))
+        TurnstileRequest::create(
+            uri: '/',
+            method: 'POST',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode([Turnstile::KEY => 'test_key'])
+        )
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'))
             ->validateResolved();
@@ -61,7 +66,7 @@ class TurnstileRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
 
-        TurnstileRequest::create(uri: '/', method: 'POST', parameters: [Turnstile::KEY => $value])
+        TurnstileRequest::create('/', 'POST', [Turnstile::KEY => $value])
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'))
             ->validateResolved();
@@ -81,7 +86,7 @@ class TurnstileRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
 
-        TurnstileRequest::create(uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'invalid'])
+        TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'invalid'])
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'))
             ->validateResolved();
@@ -101,9 +106,12 @@ class TurnstileRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
 
-        TurnstileRequest::create(uri: '/', method: 'POST', server: [
-            'CONTENT_TYPE' => 'application/json',
-        ], content: json_encode([Turnstile::KEY => 'invalid']))
+        TurnstileRequest::create(
+            uri: '/',
+            method: 'POST',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode([Turnstile::KEY => 'invalid'])
+        )
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'))
             ->validateResolved();
@@ -111,9 +119,7 @@ class TurnstileRequestTest extends TestCase
 
     public function test_metadata(): void
     {
-        $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
-        )->setContainer($this->app);
+        $request = TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_key'])->setContainer($this->app);
 
         $request->validateResolved();
 
@@ -126,9 +132,7 @@ class TurnstileRequestTest extends TestCase
 
     public function test_action(): void
     {
-        $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
-        )->setContainer($this->app);
+        $request = TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_key'])->setContainer($this->app);
 
         $request->validateResolved();
 
@@ -142,9 +146,7 @@ class TurnstileRequestTest extends TestCase
 
     public function test_customer_data(): void
     {
-        $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
-        )->setContainer($this->app);
+        $request = TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_key'])->setContainer($this->app);
 
         $request->validateResolved();
 
@@ -158,9 +160,8 @@ class TurnstileRequestTest extends TestCase
 
     public function test_extending_form_request_validates_turnstile_before_rules(): void
     {
-        $request = TestTurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key', 'test' => 'value'],
-        )->setContainer($this->app);
+        $request = TestTurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_key', 'test' => 'value'])
+            ->setContainer($this->app);
 
         $request->validateResolved();
 
@@ -181,9 +182,7 @@ class TurnstileRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
 
-        $request = TestTurnstileRequest::create(uri: '/', method: 'POST', server: [
-            'CONTENT_TYPE' => 'application/json',
-        ], content: json_encode([Turnstile::KEY => 'invalid']))
+        $request = TestTurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'invalid'])
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'));
 
@@ -193,6 +192,68 @@ class TurnstileRequestTest extends TestCase
             static::assertFalse($request->rulesWasAsked);
 
             throw $e;
+        }
+    }
+
+    public function test_uses_default_attributes_and_messages(): void
+    {
+        $this->mock(Turnstile::class, function (MockInterface $mock) {
+            $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->andReturn(Turnstile::KEY);
+            $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
+            $mock->expects('getChallenge')->andReturn(new Challenge(
+                false, '', '', '', [], [], new Carbon(),
+            ));
+        });
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('test_message test_attribute');
+
+        $request = TestMessagesAndAttributesTurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'invalid'])
+            ->setContainer($this->app)
+            ->setRedirector($this->app->make('redirect'));
+
+        try {
+            $request->validateResolved();
+        } catch (ValidationException $e) {
+            static::assertSame(
+                'test_message test_attribute',
+                $e->validator->getMessageBag()->get(Turnstile::KEY)[0]
+            );
+
+            throw $e;
+        }
+    }
+
+    public function test_doesnt_validates_challenge_on_precognition(): void
+    {
+        // $this->expectNotToPerformAssertions();
+
+        $this->mock(Turnstile::class, function (MockInterface $mock) {
+            $mock->expects('key')->andReturn(Turnstile::KEY);
+            $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
+            $mock->expects('isDisabled')->never();
+            $mock->expects('getChallenge')->never();
+        });
+
+        $request = TurnstileRequest::create('/', 'POST', [Turnstile::KEY => 'test_token']);
+        $request->headers->set('Precognition-Validate-Only', 'not-turnstile');
+        $request->attributes->set('precognitive', true);
+
+        $request
+            ->setContainer($this->app)
+            ->setRedirector($this->app->make('redirect'));
+
+        try {
+            $request->validateResolved();
+        } catch (Throwable $e) {
+            if (method_exists($e, 'getStatusCode') && method_exists($e, 'getHeaders')) {
+                static::assertSame(204, $e->getStatusCode());
+                static::assertArrayHasKey('Precognition-Success', $e->getHeaders());
+                static::assertSame('true', $e->getHeaders()['Precognition-Success']);
+            } else {
+                throw $e;
+            }
         }
     }
 }
@@ -206,7 +267,24 @@ class TestTurnstileRequest extends TurnstileRequest
         $this->rulesWasAsked = true;
 
         return [
-            'test' => 'required|string'
+            'test' => 'required|string',
+        ];
+    }
+}
+
+class TestMessagesAndAttributesTurnstileRequest extends TurnstileRequest
+{
+    public function messages(): array
+    {
+        return [
+            Turnstile::KEY => 'test_message :attribute',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            Turnstile::KEY => 'test_attribute',
         ];
     }
 }

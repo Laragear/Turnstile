@@ -32,17 +32,14 @@ class TurnstileRequest extends FormRequest
         /** @var \Laragear\Turnstile\Turnstile $turnstile */
         $turnstile = $this->container->make(Turnstile::class);
 
-        // We are going to copy-and-paste the "getValidatorInstance" but using our data and rules.
-        /** @var \Illuminate\Contracts\Validation\Factory $factory */
-        $factory = $this->container->make('validator');
+        // Create a new validator with overridable the messages and attribute names.
+        $validator = $this->container->make('validator')->make( // @phpstan-ignore-line
+            $this->only($turnstile->key()), $turnstile->rules(), $this->messages(), $this->attributes(),
+        )->stopOnFirstFailure($this->stopOnFirstFailure);
 
-        $validator = $factory->make( // @phpstan-ignore-line
-            $this->only($turnstile->key()),
-            $turnstile->rules(),
-            $this->messages(),
-            $this->attributes(),
-        )->stopOnFirstFailure();
-
+        // If the request is precognitive, filter the rules. This lets the developer add or remove
+        // the Turnstile Response Token if he sees it necessary for the precognitive request. If
+        // the filtered rules don't have the Turnstile token, the validation will pass anyway.
         if ($this->isPrecognitive()) {
             $validator->setRules($this->filterPrecognitiveRules($validator->getRulesWithoutPlaceholders()));
         }
