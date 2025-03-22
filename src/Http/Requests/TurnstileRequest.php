@@ -9,14 +9,43 @@ use Laragear\Turnstile\Turnstile;
 class TurnstileRequest extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
+     * Handle a passed validation attempt.
      *
-     * @return array<string, string>
+     * @return void
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
-    public function rules(): array
+    protected function passedValidation(): void
     {
-        return $this->container->make(Turnstile::class)->rules();
+        $this->checkTurnstileChallenge();
+    }
+
+    /**
+     * Checks if the Cloudflare Turnstile challenge is valid through the validation rule.
+     *
+     * @return void
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    protected function checkTurnstileChallenge(): void
+    {
+        /** @var \Laragear\Turnstile\Turnstile $turnstile */
+        $turnstile = $this->container->make(Turnstile::class);
+
+        // We are going to copy-and-paste the "getValidatorInstance" but using our data and rules.
+        /** @var \Illuminate\Contracts\Validation\Factory $factory */
+        $factory = $this->container->make('validator');
+
+        $validator = $factory->make(
+            $this->only($turnstile->key()),
+            $turnstile->rules(),
+            $this->messages(),
+            $this->attributes(),
+        )->stopOnFirstFailure();
+
+        if ($this->isPrecognitive()) {
+            $validator->setRules($this->filterPrecognitiveRules($validator->getRulesWithoutPlaceholders()));
+        }
+
+        $validator->validate();
     }
 
     /**

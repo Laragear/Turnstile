@@ -71,6 +71,7 @@ class TurnstileRequestTest extends TestCase
     {
         $this->mock(Turnstile::class, function (MockInterface $mock) {
             $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->andReturn(Turnstile::KEY);
             $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
             $mock->expects('getChallenge')->andReturn( new Challenge(
                 false, '', '', '', [], [], new Carbon()
@@ -90,6 +91,7 @@ class TurnstileRequestTest extends TestCase
     {
         $this->mock(Turnstile::class, function (MockInterface $mock) {
             $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->andReturn(Turnstile::KEY);
             $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
             $mock->expects('getChallenge')->andReturn( new Challenge(
                 false, '', '', '', [], [], new Carbon()
