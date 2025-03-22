@@ -33,6 +33,13 @@ class Turnstile
     public const HEADER = 'CF-Connecting-IP';
 
     /**
+     * The proper name for the Cloudflare Turnstile Challenge attribute.
+     *
+     * @const string
+     */
+    public const ATTRIBUTE = 'Cloudflare Turnstile Challenge';
+
+    /**
      * The default key where the Cloudflare Turnstile response is set.
      *
      * @const string
@@ -66,7 +73,7 @@ class Turnstile
         protected array $fakedResponse = [],
         protected bool $shouldFake = false
     ) {
-        // ...
+        //
     }
 
     /**
