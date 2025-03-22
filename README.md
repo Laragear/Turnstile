@@ -224,6 +224,38 @@ Route::post('comment', function (TurnstileRequest $request) {
 > 
 > The Request will check for the `cf-turnstile-response` key [by default](#form-key), plus a successful Challenge. If you need more fine-tuning, consider using the [middleware](#validating-with-middleware), [rule](#validating-with-rule), or [validating manually](#validating-manually).
 
+#### Extending the Form Request
+
+If you need to create a form request and also validate the Turnstile Challenge, you may safely extend the `TurnstileRequest` instead. The class runs the validation _before_ your form request authorization and rules.
+
+```php
+namespace App\Http\Requests;
+
+use Laragear\Turnstile\Http\Requests\TurnstileRequest;
+
+class CommentStoreRequest extends TurnstileRequest
+{
+    public function rules(): array
+    {
+        return [
+            'body' => 'required|string'
+        ];
+    }
+}
+```
+
+This means your controller can safely retrieve the validated data using `$request->validated()`.
+
+```php
+use App\Models\Comment;
+use Illuminate\Support\Facades\Route;
+use App\Http\Requests\CommentStoreRequest;
+
+Route::post('comment', function (CommentStoreRequest $request) {
+    return Comment::create($request->validated());
+})
+```
+
 ### Validating with Middleware
 
 The `turnstile` middleware is a great way to check if a form submission contains a successful challenge. Simply add the middleware to the route (or group of routes) that receive the form submission, like a `POST`, `PUT` or `PATCH`. 
