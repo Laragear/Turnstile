@@ -9,12 +9,12 @@ use Laragear\Turnstile\Turnstile;
 class TurnstileRequest extends FormRequest
 {
     /**
-     * Handle a passed validation attempt.
+     * Prepare the data for validation.
      *
      * @return void
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
-    protected function passedValidation(): void
+    protected function prepareForValidation(): void
     {
         $this->checkTurnstileChallenge();
     }
