@@ -36,7 +36,7 @@ class TurnstileRequest extends FormRequest
         /** @var \Illuminate\Contracts\Validation\Factory $factory */
         $factory = $this->container->make('validator');
 
-        $validator = $factory->make(
+        $validator = $factory->make( // @phpstan-ignore-line
             $this->only($turnstile->key()),
             $turnstile->rules(),
             $this->messages(),
