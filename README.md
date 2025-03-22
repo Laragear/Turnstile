@@ -179,6 +179,8 @@ When issuing a form, you have three alternatives to ensure the Turnstile challen
 > - The Cloudflare Turnstile servers are unreachable.
 > - The request to Cloudflare Turnstile servers is malformed.
 > - The token is duplicated or had a timeout.
+> 
+> Connection problems will always throw an exception.
 
 ### Validating with Request
 
