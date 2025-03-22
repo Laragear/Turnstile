@@ -9,16 +9,14 @@ use Laragear\Turnstile\Turnstile;
 class TurnstileRequest extends FormRequest
 {
     /**
-     * Validate the class instance.
+     * Handle a passed validation attempt.
      *
      * @return void
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
-    public function validateResolved(): void
+    protected function passedValidation(): void
     {
         $this->checkTurnstileChallenge();
-
-        parent::validateResolved();
     }
 
     /**
@@ -32,14 +30,17 @@ class TurnstileRequest extends FormRequest
         /** @var \Laragear\Turnstile\Turnstile $turnstile */
         $turnstile = $this->container->make(Turnstile::class);
 
-        // Create a new validator with overridable the messages and attribute names.
-        $validator = $this->container->make('validator')->make(
-            $this->only($turnstile->key()), $turnstile->rules(), $this->messages(), $this->attributes(),
-        )->stopOnFirstFailure($this->stopOnFirstFailure);
+        // We are going to copy-and-paste the "getValidatorInstance" but using our data and rules.
+        /** @var \Illuminate\Contracts\Validation\Factory $factory */
+        $factory = $this->container->make('validator');
 
-        // If the request is precognitive, filter the rules. This lets the developer add or remove
-        // the Turnstile Response Token if he sees it necessary for the precognitive request. If
-        // the filtered rules don't have the Turnstile token, the validation will pass anyway.
+        $validator = $factory->make(
+            $this->only($turnstile->key()),
+            $turnstile->rules(),
+            $this->messages(),
+            $this->attributes(),
+        )->stopOnFirstFailure();
+
         if ($this->isPrecognitive()) {
             $validator->setRules($this->filterPrecognitiveRules($validator->getRulesWithoutPlaceholders()));
         }
