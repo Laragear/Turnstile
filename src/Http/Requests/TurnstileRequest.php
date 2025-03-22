@@ -10,8 +10,6 @@ class TurnstileRequest extends FormRequest
 {
     /**
      * Validate the class instance.
-     *
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public function validateResolved(): void
     {
