@@ -16,7 +16,7 @@ class TurnstileRequestTest extends TestCase
 {
     protected function defineRoutes($router): void
     {
-        $router->post('test', static function(TurnstileRequest $request): bool {
+        $router->post('test', static function (TurnstileRequest $request): bool {
             return $request->challenge()->success;
         });
     }
@@ -26,7 +26,7 @@ class TurnstileRequestTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key']
+            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
         )->setContainer($this->app)->validateResolved();
     }
 
@@ -35,7 +35,7 @@ class TurnstileRequestTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         TurnstileRequest::create(uri: '/', method: 'POST', server: [
-                'CONTENT_TYPE' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([Turnstile::KEY => 'test_key']))
             ->setContainer($this->app)
             ->setRedirector($this->app->make('redirect'))
@@ -51,7 +51,7 @@ class TurnstileRequestTest extends TestCase
             [1],
             [1.0],
             [[]],
-            ['']
+            [''],
         ];
     }
 
@@ -73,8 +73,8 @@ class TurnstileRequestTest extends TestCase
             $mock->expects('isDisabled')->andReturnFalse();
             $mock->expects('key')->andReturn(Turnstile::KEY);
             $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
-            $mock->expects('getChallenge')->andReturn( new Challenge(
-                false, '', '', '', [], [], new Carbon()
+            $mock->expects('getChallenge')->andReturn(new Challenge(
+                false, '', '', '', [], [], new Carbon(),
             ));
         });
 
@@ -93,8 +93,8 @@ class TurnstileRequestTest extends TestCase
             $mock->expects('isDisabled')->andReturnFalse();
             $mock->expects('key')->andReturn(Turnstile::KEY);
             $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
-            $mock->expects('getChallenge')->andReturn( new Challenge(
-                false, '', '', '', [], [], new Carbon()
+            $mock->expects('getChallenge')->andReturn(new Challenge(
+                false, '', '', '', [], [], new Carbon(),
             ));
         });
 
@@ -112,13 +112,13 @@ class TurnstileRequestTest extends TestCase
     public function test_metadata(): void
     {
         $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key']
+            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
         )->setContainer($this->app);
 
         $request->validateResolved();
 
         $this->app->instance(
-            Challenge::class, new Challenge(true, '', '', '', ['foo' => ['bar' => 'baz']], [], new Carbon())
+            Challenge::class, new Challenge(true, '', '', '', ['foo' => ['bar' => 'baz']], [], new Carbon()),
         );
 
         static::assertSame('baz', $request->metadata('foo.bar'));
@@ -127,13 +127,13 @@ class TurnstileRequestTest extends TestCase
     public function test_action(): void
     {
         $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key']
+            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
         )->setContainer($this->app);
 
         $request->validateResolved();
 
         $this->app->instance(
-            Challenge::class, new Challenge(true, '', 'test_action', '', [], [], new Carbon())
+            Challenge::class, new Challenge(true, '', 'test_action', '', [], [], new Carbon()),
         );
 
         static::assertTrue($request->isAction('test_action'));
@@ -143,16 +143,70 @@ class TurnstileRequestTest extends TestCase
     public function test_customer_data(): void
     {
         $request = TurnstileRequest::create(
-            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key']
+            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key'],
         )->setContainer($this->app);
 
         $request->validateResolved();
 
         $this->app->instance(
-            Challenge::class, new Challenge(true, '', '', 'test_cdata', [], [], new Carbon())
+            Challenge::class, new Challenge(true, '', '', 'test_cdata', [], [], new Carbon()),
         );
 
         static::assertTrue($request->isCustomerData('test_cdata'));
         static::assertFalse($request->isNotCustomerData('test_cdata'));
+    }
+
+    public function test_extending_form_request_validates_turnstile_before_rules(): void
+    {
+        $request = TestTurnstileRequest::create(
+            uri: '/', method: 'POST', parameters: [Turnstile::KEY => 'test_key', 'test' => 'value'],
+        )->setContainer($this->app);
+
+        $request->validateResolved();
+
+        static::assertSame(['test' => 'value'], $request->validated());
+    }
+
+    public function test_challenge_error_runs_before_rules(): void
+    {
+        $this->mock(Turnstile::class, function (MockInterface $mock) {
+            $mock->expects('isDisabled')->andReturnFalse();
+            $mock->expects('key')->andReturn(Turnstile::KEY);
+            $mock->expects('rules')->andReturn([Turnstile::KEY => 'turnstile']);
+            $mock->expects('getChallenge')->andReturn(new Challenge(
+                false, '', '', '', [], [], new Carbon(),
+            ));
+        });
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('The Cloudflare Turnstile challenge is invalid, absent, or has failed.');
+
+        $request = TestTurnstileRequest::create(uri: '/', method: 'POST', server: [
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode([Turnstile::KEY => 'invalid']))
+            ->setContainer($this->app)
+            ->setRedirector($this->app->make('redirect'));
+
+        try {
+            $request->validateResolved();
+        } catch (ValidationException $e) {
+            static::assertFalse($request->rulesWasAsked);
+
+            throw $e;
+        }
+    }
+}
+
+class TestTurnstileRequest extends TurnstileRequest
+{
+    public bool $rulesWasAsked = false;
+
+    public function rules(): array
+    {
+        $this->rulesWasAsked = true;
+
+        return [
+            'test' => 'required|string'
+        ];
     }
 }
