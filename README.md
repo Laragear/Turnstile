@@ -134,13 +134,19 @@ You will be able to retrieve the site key through Javascript by querying the met
 
 ```vue
 <script setup>
+import VueTurnstile from 'some-vue-turnstile library'
+
 const siteKey = document.querySelector('meta[name="turnstile-sitekey"]').content;
+
+const token = ref('')
 
 // ...
 </script>
 
 <template>
-    <div class="cf-turnstile shadow-lg" :data-sitekey="siteKey"></div>
+    <VueTurnstile :sitekey="siteKey" v-model="token" />
+    
+    <!-- ... -->
 </template>
 ```
 
