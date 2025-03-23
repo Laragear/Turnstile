@@ -25,6 +25,7 @@ class Script extends Component
         public ?string $onload = null,
         public bool $async = true,
         public bool $defer = true,
+        public string|bool $meta = false,
     )
     {
         //
@@ -44,10 +45,18 @@ class Script extends Component
         return function (): string {
             $source = static::SOURCE . $this->query();
 
-            return <<<HTML
+            $script = <<<HTML
 <script src="$source" {{ \$attributes }} {{ \implode(' ', \array_filter([\$defer ? 'defer' : '', \$async ? 'async' : '' ])) }}></script>
-HTML
-                ;
+HTML;
+
+            if ($this->meta) {
+                $script .= "\n" . <<<HTML
+<meta name="{{ is_bool(\$meta) ? 'turnstile-sitekey' : \$meta }}" content="{$this->turnstile->getSiteKey()}" />
+HTML;
+
+            }
+
+            return $script;
         };
     }
 
