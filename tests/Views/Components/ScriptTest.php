@@ -71,4 +71,26 @@ class ScriptTest extends TestCase
                 false
             );
     }
+
+    public function test_adds_meta_tag(): void
+    {
+        $this->render('<x-turnstile::script meta />')
+            ->assertSee(<<<HTML
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"  defer async></script>
+<meta name="turnstile-sitekey" content="1x00000000000000000000AA" />
+HTML,
+                false
+            );
+    }
+
+    public function test_adds_meta_tag_with_name(): void
+    {
+        $this->render('<x-turnstile::script meta="test-name" />')
+            ->assertSee(<<<HTML
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"  defer async></script>
+<meta name="test-name" content="1x00000000000000000000AA" />
+HTML,
+                false
+            );
+    }
 }

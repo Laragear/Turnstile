@@ -68,10 +68,20 @@ You can use the `<x-turnstile::script />` Blade Component to implement the Cloud
 </html>
 ```
 
-The script will render a `<script>` tag using `async` and `defer` by default. You can set any of these to `false`.
+The script will render a `<script>` tag using `async` and `defer` by default:
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer async></script>
+```
+
+If you don't want to use `async` or `defer`, you can set any of these to `false`.
 
 ```blade
 <x-turnstile::script :async="false" :defer="false" />
+```
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
 ```
 
 You may also set `explicit` to `true` to make widgets be rendered only explicitly by your frontend JavaScript.
@@ -80,10 +90,74 @@ You may also set `explicit` to `true` to make widgets be rendered only explicitl
 <x-turnstile::script :explicit="true" />
 ```
 
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer async></script>
+```
+
 Finally, you can also set a custom callback name to be executed once the script is completely loaded in your frontend, especially if you're using explicit rendering, with the `onload` attribute.
 
 ```blade
 <x-turnstile::script :explicit="true" onload="renderAllWidgets" />
+```
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=renderAllWidgets" defer async></script>
+```
+
+#### Site Key on JavaScript frontend
+
+If you put the script on the `<head>` part of your HTML view, you may set the `meta` attribute to render a `<meta>` tag alongside the script. This tag will contain your Turnstile site key so your JavaScript frontend can  retrieve use it to render the widget.
+
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ... -->
+    <title>My application</title>
+    
+    <x-turnstile::script meta />
+</head>
+<body>
+  ...
+</body>
+</html>
+```
+
+It will render the following HTML:
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer async></script>
+<meta name="turnstile-sitekey" content="1x00000000000000000000AA" />
+```
+
+You will be able to retrieve the site key through Javascript by querying the meta tag with the `turnstile-sitekey` name.
+
+```vue
+<script setup>
+import VueTurnstile from 'some-vue-turnstile library'
+
+const siteKey = document.querySelector('meta[name="turnstile-sitekey"]').content;
+
+const token = ref('')
+
+// ...
+</script>
+
+<template>
+    <VueTurnstile :sitekey="siteKey" v-model="token" />
+    
+    <!-- ... -->
+</template>
+```
+
+Alternatively, you may set a custom name for the tag by setting a value to the `meta` attribute.
+
+```blade
+<x-turnstile::script meta="my-custom-key" />
+```
+
+```html
+<meta name="my-custom-key" content="1x00000000000000000000AA" />
 ```
 
 ### Widget
@@ -126,42 +200,6 @@ You can pass HTML attributes and [data attributes](https://developers.cloudflare
 > [!TIP]
 >
 > Classes are automatically appended, so you shouldn't worry about overwriting the `cf-turnstile` class used by the Widget to render.
-
-### Retrieving the Site Key
-
-If you're using a custom JavaScript frontend, you may require your Site Key available _somewhere_ so the frontend library can use it. You may do that by just simply using the `siteKey()` method of the `Turnstile` facade inside the `<meta>` header in your main HTML view.
-
-```blade
-@php
-    use Laragear\Turnstile\Facades\Turnstile;
-@endphp
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>My awesome app</title>
-    <meta name="turnstile-sitekey" content="{{ Turnstile::sitekey() }}">
-</head>
-<body>
-    // ...
-</body>
-</html>
-```
-
-Then later you will be able to retrieve the site key through Javascript.
-
-```vue
-<script setup>
-const siteKey = document.querySelector('meta[name="turnstile-sitekey"]').content;
-
-// ...
-</script>
-
-<template>
-    <div class="cf-turnstile shadow-lg" :data-sitekey="siteKey"></div>
-</template>
-```
 
 ## Backend integration
 
@@ -869,3 +907,5 @@ If you discover any security related issues, please [report it using the online 
 This specific package version is licensed under the terms of the [MIT License](LICENSE.md), at time of publishing.
 
 [Laravel](https://laravel.com) is a Trademark of [Taylor Otwell](https://github.com/TaylorOtwell/). Copyright © 2011-2025 Laravel LLC.
+
+[Cloudflare](https://www.cloudflare.com) and Cloudflare Turnstile are trademarks of [Cloudflare, Inc](https://www.cloudflare.com/trademark/). Copyright © 2009-2025.
