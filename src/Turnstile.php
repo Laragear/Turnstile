@@ -21,6 +21,7 @@ use function gethostname;
 use function in_array;
 use function json_encode;
 use function parse_url;
+use function strtolower;
 use const PHP_URL_HOST;
 
 class Turnstile
@@ -275,7 +276,14 @@ class Turnstile
         $key = $this->config->get('turnstile.site_key');
 
         if ($this->currentEnvironment() !== 'production') {
-            $key ??= $this->testingSiteKey->value;
+            $key = match (strtolower($key)) {
+                '' => $this->testingSiteKey->value,
+                strtolower(SiteKey::VisiblePassing->name) => SiteKey::VisiblePassing->value,
+                strtolower(SiteKey::VisibleBlocks->name) => SiteKey::VisibleBlocks->value,
+                strtolower(SiteKey::InvisiblePassing->name) => SiteKey::InvisiblePassing->value,
+                strtolower(SiteKey::InvisibleBlocks->name) => SiteKey::InvisibleBlocks->value,
+                default => $key,
+            };
         }
 
         return $key;
@@ -289,7 +297,13 @@ class Turnstile
         $key = $this->config->get('turnstile.secret_key');
 
         if ($this->currentEnvironment() !== 'production') {
-            $key ??= $this->testingSecretKey->value;
+            $key = match (strtolower($key)) {
+                '' => $this->testingSecretKey->value,
+                strtolower(SecretKey::Passing->name) => SiteKey::VisiblePassing->value,
+                strtolower(SecretKey::Fails->name) => SiteKey::VisibleBlocks->value,
+                strtolower(SecretKey::Spent->name) => SiteKey::InvisiblePassing->value,
+                default => $key,
+            };
         }
 
         return $key;
