@@ -777,6 +777,18 @@ use Laragear\Turnstile\Http\Controllers\InterstitialController;
 InterstitialController::register('/challenge', 'guest');
 ```
 
+> [!IMPORTANT]
+> 
+> The interstitial middleware will _throw_ a JSON response if the request _requires_ JSON. This is because JSON response cannot be redirected. Instead, use the `redirect_url` key of the response to redirect the user to the interstitial controller.
+> 
+> ```js
+> response = await $fetch('/comment', 'POST', {body: 'My Comment'});
+> 
+> if (response.isStatus(400) && response.hasJson('redirect_url')) {
+>   window.location.href = response.json('redirect_url')
+> }
+> ```
+
 ### Skip when authenticated
 
 If you want to skip the challenge if a user is authenticated, you may add the `auth` keyword as parameter.
@@ -861,7 +873,7 @@ return [
 
 ```php
 return [
-   The `true` value will remind the challenge forever. An integer will remind the challenge for that amount of minutes.
+    'env' => env('TURNSTILE_ENV'),
 ];
 ```
 

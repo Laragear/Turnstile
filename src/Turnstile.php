@@ -299,9 +299,9 @@ class Turnstile
         if ($this->currentEnvironment() !== 'production') {
             $key = match (strtolower($key)) {
                 '' => $this->testingSecretKey->value,
-                strtolower(SecretKey::Passing->name) => SiteKey::VisiblePassing->value,
-                strtolower(SecretKey::Fails->name) => SiteKey::VisibleBlocks->value,
-                strtolower(SecretKey::Spent->name) => SiteKey::InvisiblePassing->value,
+                strtolower(SecretKey::Passing->name) => SecretKey::Passing->value,
+                strtolower(SecretKey::Fails->name) => SecretKey::Fails->value,
+                strtolower(SecretKey::Spent->name) => SecretKey::Spent->value,
                 default => $key,
             };
         }
