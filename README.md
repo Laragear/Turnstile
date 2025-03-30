@@ -862,9 +862,22 @@ public function test_comment_is_moderated_when_bot_detected()
 
 #### Testing keys
 
-If you want to swap keys to test challenges from the Cloudflare Turnstile servers, use the `useTestingSiteKey()` and `useTestingSecretKey()` methods of the `Turnstile` facade, along with the keys of your choice.
+This library incorporates the official testing Turnstile Site Keys and Secret Keys as the `Laragear\Turnstile\Enums\SiteKey` and `Laragear\Turnstile\Enums\SecretKey`, respectively.
 
-Both [testing site keys and secret keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) can be picked at `Laragear\Turnstile\Enums\SiteKey` and `Laragear\Turnstile\Enums\SecretKey`, respectively.
+The easiest way to change the testing keys on development is to change the environment variables on your `.env` files, as Laravel will automatically restart to pick up the changes. You can use the enum names, as these will be matched automatically to the corresponding testing key.
+
+```dotenv
+TURNSTILE_SITE_KEY=ForceInteraction
+TURNSTILE_SECRET_KEY=Fails
+```
+
+For the case of the widget, you may require to refresh your browser so the widget gets re-rendered with the selected key. 
+
+> [!NOTE]
+> 
+> This doesn't work on [production environments](#environment). Ensure you have your correct keys in production!
+
+Inside your application, you can programmatically swap keys use the `useTestingSiteKey()` and `useTestingSecretKey()` methods of the `Turnstile` facade, along with the corresponding enums for the behaviour you require to check.
 
 ```php
 use Laragear\Turnstile\Enums\SiteKey;

@@ -501,4 +501,50 @@ class TurnstileTest extends TestCase
 
         $this->turnstile()->useTestingSecretKey($key)->getChallenge('test_token');
     }
+
+    public static function provideTestingSiteKeysNames(): array
+    {
+        return [
+            [SiteKey::VisiblePassing, 'VisiblePassing'],
+            [SiteKey::VisiblePassing, 'visiblepassing'],
+            [SiteKey::VisibleBlocks, 'VisibleBlocks'],
+            [SiteKey::VisibleBlocks, 'visibleblocks'],
+            [SiteKey::InvisiblePassing, 'InvisiblePassing'],
+            [SiteKey::InvisiblePassing, 'invisiblepassing'],
+            [SiteKey::InvisibleBlocks, 'InvisibleBlocks'],
+            [SiteKey::InvisibleBlocks, 'invisibleblocks'],
+        ];
+    }
+
+    #[DataProvider('provideTestingSiteKeysNames')]
+    public function test_uses_testing_site_key_by_name(SiteKey $key, string $name): void
+    {
+        $this->app->instance('env', 'not-production-nor-testing');
+        $this->app->make('config')->set('turnstile.site_key', $name);
+
+        static::assertSame($this->turnstile()->getSiteKey(), $key->value);
+    }
+
+    public static function provideTestingSecretKeysNames(): array
+    {
+        return [
+            [SiteKey::VisiblePassing, 'VisiblePassing'],
+            [SiteKey::VisiblePassing, 'visiblepassing'],
+            [SiteKey::VisibleBlocks, 'VisibleBlocks'],
+            [SiteKey::VisibleBlocks, 'visibleblocks'],
+            [SiteKey::InvisiblePassing, 'InvisiblePassing'],
+            [SiteKey::InvisiblePassing, 'invisiblepassing'],
+            [SiteKey::InvisibleBlocks, 'InvisibleBlocks'],
+            [SiteKey::InvisibleBlocks, 'invisibleblocks'],
+        ];
+    }
+
+    #[DataProvider('provideTestingSecretKeysNames')]
+    public function test_uses_testing_secret_key_by_name(SiteKey $key, string $name): void
+    {
+        $this->app->instance('env', 'not-production-nor-testing');
+        $this->app->make('config')->set('turnstile.site_key', $name);
+
+        static::assertSame($this->turnstile()->getSiteKey(), $key->value);
+    }
 }
