@@ -752,6 +752,81 @@ Route::middleware('turnstile')
     });
 ```
 
+## Interstitial challenge
+
+You can force a first-time visitor to complete a Turnstile challenge with the `turnstile.interstitial` middleware. Once completed, the user will be redirected to its intended route.
+
+Before using it, you should register the default routes to handle to show interstitial challenge and capture it. You can do this with the `Laragear\Turnstile\Http\Controllers\InterstitialController::register()` method.
+
+```php
+use Illuminate\Support\Facades\Route;
+use Laragear\Turnstile\Http\Controllers\InterstitialController;
+
+Route::group(function () {
+    // ...
+})->middleware('turnstile.interstitial');
+
+InterstitialController::register();
+```
+
+You may change the default path the routes will use using the first parameter, and middleware using the second:
+
+```php
+use Laragear\Turnstile\Http\Controllers\InterstitialController;
+
+InterstitialController::register('/challenge', 'guest');
+```
+
+### Skip when authenticated
+
+If you want to skip the challenge if a user is authenticated, you may add the `auth` keyword as parameter.
+
+```php
+use Illuminate\Support\Facades\Route;
+use Laragear\Turnstile\Http\Middleware\InterstitialMiddleware;
+
+Route::get('photos', function () {
+    // ..
+})->middleware('turnstile.interstitial:auth');
+```
+
+Alternatively, you can set which guards to check to skip the middleware by setting the guards as `auth=guard&guard..`.
+
+```php
+use Illuminate\Support\Facades\Route;
+use Laragear\Turnstile\Http\Middleware\InterstitialMiddleware;
+
+Route::get('photos', function () {
+    // ..
+})->middleware('turnstile.interstitial:auth=web&admins');
+```
+
+> [!IMPORTANT]
+> 
+> When setting the middleware to be skipped for authenticated users, [interstitial routes](#setup) should also be hidden for authenticated users.
+> 
+> ```php
+> use Laragear\Turnstile\Http\Controllers\InterstitialController;
+> 
+> InterstitialController::register(middleware: 'guest');
+> ```
+> 
+
+### Global interstitial
+
+If you want to [register the middleware globally](https://laravel.com/docs/12.x/middleware#global-middleware), you should do it in the `web` middleware group. This can be done in your `bootstrap/app.php` file or `App\Providers\AppServiceProviders`.
+
+```php
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->appendToGroup('web', 'turnstile.interstitial');
+    })
+    ->create();
+```
+
 ## Advanced configuration
 
 Laragear Turnstile is intended to work out-of-the-box, but you can publish the configuration file for fine-tuning the Challenge verification.
@@ -773,6 +848,12 @@ return [
     ],
     'site_key' => env('TURNSTILE_SITE_KEY'),
     'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    'interstitial' => [
+        'key' => '_turnstile.interstitial',
+        'view' => 'turnstile::interstitial',
+        'route' => 'turnstile.interstitial',
+        'duration' => true,
+    ],
 ];
 ``` 
 
@@ -780,7 +861,7 @@ return [
 
 ```php
 return [
-    'env' => env('TURNSTILE_ENV'),
+   The `true` value will remind the challenge forever. An integer will remind the challenge for that amount of minutes.
 ];
 ```
 
@@ -835,6 +916,24 @@ Here is the full array of Turnstile Site Key (public) and Secret Key (private) t
 TURNSTILE_SITE_KEY=...
 TURNSTILE_SECRET_KEY=...
 ```
+
+### Interstitial
+
+```php
+'interstitial' => [
+    'key' => '_turnstile.interstitial',
+    'view' => 'turnstile::interstitial',
+    'route' => 'turnstile.interstitial',
+    'duration' => true,
+],
+```
+
+This controls the [interstitial middleware](#interstitial-challenge) behavior:
+
+- `key`: Where in the session is stored the challenge reminder.
+- `view`: View to use to show the user as the interstitial challenge.
+- `route`: The name of the route the middleware should point to.
+- `duration`: Default duration to reminder the challenge. The `true` value will remind the challenge forever. An integer will remind the challenge for that amount of minutes.
 
 ## Testing
 
