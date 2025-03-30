@@ -16,6 +16,8 @@ class TurnstileServiceProvider extends ServiceProvider
     // These constants point to publishable files/directories.
     public const CONFIG = __DIR__.'/../config/turnstile.php';
     public const LANG = __DIR__.'/../lang';
+    public const VIEWS = __DIR__.'/../resources/views';
+    public const CONTROLLERS = __DIR__.'/../stubs/controllers';
 
     /**
      * Register the application services.
@@ -23,7 +25,9 @@ class TurnstileServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(static::CONFIG, 'turnstile');
+
         $this->loadTranslationsFrom(static::LANG, 'turnstile');
+        $this->loadViewsFrom(static::VIEWS, 'turnstile');
 
         $this->app->singleton(Turnstile::class);
 
@@ -41,10 +45,14 @@ class TurnstileServiceProvider extends ServiceProvider
         $router->aliasMiddleware(
             Http\Middleware\TurnstileMiddleware::ALIAS, Http\Middleware\TurnstileMiddleware::class
         );
+        $router->aliasMiddleware(
+            Http\Middleware\InterstitialMiddleware::ALIAS, Http\Middleware\InterstitialMiddleware::class
+        );
 
         if ($this->app->runningInConsole()) {
             $this->publishes([static::CONFIG => $this->app->configPath('turnstile.php')], 'config');
             $this->publishes([static::LANG => $this->app->langPath('vendor/turnstile')], 'lang');
+            $this->publishes([static::VIEWS => $this->app->resourcePath('vendor/turnstile')], 'views');
         }
 
         $this->callAfterResolving('blade.compiler', static function (BladeCompiler $blade): void {

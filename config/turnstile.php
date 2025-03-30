@@ -59,4 +59,24 @@ return [
 
     'site_key' => env('TURNSTILE_SITE_KEY'),
     'secret_key' => env('TURNSTILE_SECRET_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Interstitial Middleware
+    |--------------------------------------------------------------------------
+    |
+    | When using the Interstitial middleware this config will handle the view
+    | that will be shown for the challenge, the controller that will receive
+    | the response token, and the session key name to store the completion.
+    |
+    | When "global" is set to true, it will be registered site-wide.
+    |
+    */
+
+    'interstitial' => [
+        'key' => '_turnstile.interstitial',
+        'view' => 'turnstile::interstitial',
+        'route' => 'turnstile.interstitial',
+        'duration' => true,
+    ],
 ];
