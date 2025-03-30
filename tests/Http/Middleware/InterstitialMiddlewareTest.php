@@ -88,4 +88,26 @@ class InterstitialMiddlewareTest extends TestCase
             ->assertRedirect('turnstile/interstitial')
             ->assertRedirectToRoute($this->app->make('config')->get('turnstile.interstitial.route'));
     }
+
+    public function test_throws_json_response_if_request_is_json(): void
+    {
+        $this->router()->get('test/intended', fn() => 'ok')->middleware('web', 'turnstile.interstitial');
+        $this->router()->post('test/intended', fn() => 'ok')->middleware('web', 'turnstile.interstitial');
+
+        $this->getJson('test/intended')
+            ->assertStatus(400)
+            ->assertJson([
+                'success' => false,
+                'message' => "Requires Turnstile Challenge.",
+                'redirect_url' => 'http://localhost/turnstile/interstitial',
+            ]);
+
+        $this->getJson('test/intended')
+            ->assertStatus(400)
+            ->assertJson([
+                'success' => false,
+                'message' => "Requires Turnstile Challenge.",
+                'redirect_url' => 'http://localhost/turnstile/interstitial',
+            ]);
+    }
 }

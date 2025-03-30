@@ -528,23 +528,35 @@ class TurnstileTest extends TestCase
     public static function provideTestingSecretKeysNames(): array
     {
         return [
-            [SiteKey::VisiblePassing, 'VisiblePassing'],
-            [SiteKey::VisiblePassing, 'visiblepassing'],
-            [SiteKey::VisibleBlocks, 'VisibleBlocks'],
-            [SiteKey::VisibleBlocks, 'visibleblocks'],
-            [SiteKey::InvisiblePassing, 'InvisiblePassing'],
-            [SiteKey::InvisiblePassing, 'invisiblepassing'],
-            [SiteKey::InvisibleBlocks, 'InvisibleBlocks'],
-            [SiteKey::InvisibleBlocks, 'invisibleblocks'],
+            [SecretKey::Passing, 'Passing'],
+            [SecretKey::Passing, 'passing'],
+            [SecretKey::Fails, 'Fails'],
+            [SecretKey::Fails, 'fails'],
+            [SecretKey::Spent, 'Spent'],
+            [SecretKey::Spent, 'spent'],
         ];
     }
 
     #[DataProvider('provideTestingSecretKeysNames')]
-    public function test_uses_testing_secret_key_by_name(SiteKey $key, string $name): void
+    public function test_uses_testing_secret_key_by_name(SecretKey $key, string $name): void
     {
         $this->app->instance('env', 'not-production-nor-testing');
-        $this->app->make('config')->set('turnstile.site_key', $name);
+        $this->app->make('config')->set('turnstile.secret_key', $name);
 
-        static::assertSame($this->turnstile()->getSiteKey(), $key->value);
+        $this->mock(HttpFactory::class, function (MockInterface $mock) use ($key): void {
+            $mock->expects('asJson')->andReturnSelf();
+            $mock->expects('acceptJson')->andReturnSelf();
+            $mock->expects('withOptions')->andReturnSelf();
+            $mock->expects('post')
+                ->withArgs(static function (string $endpoint, array $data) use ($key): bool {
+                    static::assertSame($data['secret'], $key->value);
+
+                    return true;
+                })
+                ->andReturnSelf();
+            $mock->expects('throw')->andReturn($this->guzzleResponse());
+        });
+
+        $this->turnstile()->getChallenge('test-key');
     }
 }
