@@ -350,6 +350,7 @@
                     {{ __('turnstile::interstitial.title') }}
                 </div>
                 <form id="form" method="post" class="min-h-[75px]">
+                    @csrf
                     <div class="flex justify-center">
                         <x-turnstile::widget data-action="interstitial" data-callback="submitForm" />
                     </div>
