@@ -12,9 +12,6 @@ use Illuminate\Routing\Redirector;
 use Illuminate\Support\DateFactory;
 use Illuminate\Support\Str;
 
-/**
- * @internal
- */
 class InterstitialMiddleware
 {
     /**

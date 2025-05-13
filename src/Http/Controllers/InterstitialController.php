@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Laragear\Turnstile\Http\Requests\TurnstileRequest;
 
-/**
- * @internal
- */
 class InterstitialController extends Controller
 {
     /**
