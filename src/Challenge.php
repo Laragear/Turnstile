@@ -4,7 +4,7 @@ namespace Laragear\Turnstile;
 
 use ErrorException;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Stringable;
 use InvalidArgumentException;
 use function in_array;
@@ -17,7 +17,7 @@ use function in_array;
  * @property-read string $cdata
  * @property-read string $customer_data
  * @property-read string $c_data
- * @property-read \Illuminate\Support\Carbon $solved_at
+ * @property-read \Carbon\CarbonInterface $solved_at
  */
 readonly class Challenge
 {
@@ -33,7 +33,7 @@ readonly class Challenge
         public string $customerData,
         public array $metadata,
         public array $errors,
-        public Carbon $solvedAt,
+        public CarbonInterface $solvedAt,
     ) {
         // ...
     }
@@ -150,7 +150,7 @@ readonly class Challenge
      *
      * @throws \ErrorException
      */
-    public function __get(string $name): Carbon|string|bool
+    public function __get(string $name): CarbonInterface|string|bool
     {
         return match ($name) {
             'success' => $this->successful,
