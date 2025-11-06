@@ -294,7 +294,7 @@ class Turnstile
      */
     protected function getSecretKey(): string
     {
-        $key = $this->config->get('turnstile.secret_key');
+        $key = $this->config->get('turnstile.secret_key', '');
 
         if ($this->currentEnvironment() !== 'production') {
             $key = match (strtolower($key)) {
