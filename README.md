@@ -1,12 +1,12 @@
 # Turnstile
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/laragear/turnstile.svg)](https://packagist.org/packages/laragear/turnstile)
 [![Latest stable test run](https://github.com/Laragear/Turnstile/workflows/Tests/badge.svg)](https://github.com/Laragear/Turnstile/actions)
-[![Codecov coverage](https://codecov.io/gh/Laragear/Turnstile/branch/1.x/graph/badge.svg?token=5U6BJUEA4T)](https://codecov.io/gh/Laragear/Turnstile)
+[![Codecov coverage](https://codecov.io/gh/Laragear/Turnstile/branch/badge.svg?token=5U6BJUEA4T)](https://codecov.io/gh/Laragear/Turnstile)
 [![Maintainability](https://qlty.sh/badges/c82a8142-06a9-4700-8eee-b6bab1e69087/maintainability.svg)](https://qlty.sh/gh/Laragear/projects/Turnstile)
 [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=Laragear_Turnstile&metric=alert_status)](https://sonarcloud.io/dashboard?id=Laragear_Turnstile)
-[![Laravel Octane Compatibility](https://img.shields.io/badge/Laravel%20Octane-Compatible-success?style=flat&logo=laravel)](https://laravel.com/docs/11.x/octane#introduction)
+[![Laravel Octane Compatibility](https://img.shields.io/badge/Laravel%20Octane-Compatible-success?style=flat&logo=laravel)](https://laravel.com/docs/13.x/octane#introduction)
 
-Use Cloudflare's no-CAPTCHA alternative in your Laravel application.
+Use Cloudflare's no-CAPTCHA with HTTP/3 in your Laravel application.
 
 ```php
 use Illuminate\Support\Facades\Route;
@@ -24,7 +24,8 @@ Your support allows me to keep this package free, up-to-date and maintainable. A
 
 ## Requirements
 
-* Laravel 11 or later
+* PHP 8.3 or later
+* Laravel 12 or later
 
 ## Installation
 
@@ -903,15 +904,21 @@ This sets the default key to check for in the Request for the Turnstile response
 
 ```php
 return [
-    'client' => [
-        \GuzzleHttp\RequestOptions::VERSION => 1.1,
+    'client' => array_merge_recursive([
+        \GuzzleHttp\RequestOptions::VERSION => 2.0,
+        // ...Add your config here.
     ],
+        // This will detect if your cURL version has HTTP/3 support and prioritize it.
+        defined('CURL_VERSION_HTTP3') && curl_version()['features'] & CURL_VERSION_HTTP3
+            ? ['curl' => [CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_3]]
+            : [],
+    ),
 ];
 ```
 
 This array sets the options for the outgoing request to Cloudflare Turnstile servers. [This is handled by Guzzle](https://docs.guzzlephp.org/en/stable/request-options.html), which in turn will pass it to the underlying transport. Depending on your system, it will probably be cURL.
 
-By default, it instructs Guzzle to use HTTP/1.1, but [you can upgrade if available in your platform](#http2-or-http3-and-curl).
+By default, it instructs Guzzle to use HTTP/3 (QUIC), with a graceful fallback to HTTP/2 if you're not using cURL or your cURL version does not support it.
 
 ### Credentials
 
@@ -1014,22 +1021,14 @@ For the case of the [widget](#widget), you can change the site key using the `si
 
 There should be no problems using this package with Laravel Octane as intended.
 
-## HTTP/2 or HTTP/3 and cURL
-
-To use HTTP/3, [ensure you're using PHP 8.2 or later](https://php.watch/articles/php-curl-http3). cURL version  [7.66](https://curl.se/changes.html#7_66_0) supports HTTP/3, and latest PHP 8.2 uses version 7.85.
-
-For more information about checking if your platform can make HTTP/3 requests, check this [PHP Watch article](https://php.watch/articles/php-curl-http3).
-
-This library uses HTTP/1.1 by default to ensure backwards compatibility with PHP 8.2.
-
 ## Security
 
-If you discover any security related issues, please [report it using the online form](https://github.com/Laragear/Turnstile/security).
+If you discover any security-related issues, please [report it using the online form](https://github.com/Laragear/Turnstile/security).
 
 # License
 
-This specific package version is licensed under the terms of the [MIT License](LICENSE.md), at time of publishing.
+This specific package version is licensed under the terms of the [MIT License](LICENSE.md), at the time of publishing.
 
-[Laravel](https://laravel.com) is a Trademark of [Taylor Otwell](https://github.com/TaylorOtwell/). Copyright © 2011-2025 Laravel LLC.
+[Laravel](https://laravel.com) is a Trademark of [Taylor Otwell](https://github.com/TaylorOtwell/). Copyright © 2011–2026 Laravel LLC.
 
-[Cloudflare](https://www.cloudflare.com) and Cloudflare Turnstile are trademarks of [Cloudflare, Inc](https://www.cloudflare.com/trademark/). Copyright © 2009-2025.
+[Cloudflare](https://www.cloudflare.com) and Cloudflare Turnstile are trademarks of [Cloudflare, Inc](https://www.cloudflare.com/trademark/). Copyright © 2009–2026.

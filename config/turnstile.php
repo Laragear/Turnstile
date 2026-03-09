@@ -36,15 +36,21 @@ return [
     |--------------------------------------------------------------------------
     |
     | This array is passed down to the underlying HTTP Client which will make
-    | the request to Turnstile servers. By default, it will use HTTP/1.1 for
-    | the request. You can change, remove or add more options in the array.
+    | the request to Turnstile servers. By default, we use HTTP/3 (QUIC) for
+    | the cURL request, with a graceful fallback to 2.0 in any other cases.
     |
     | @see https://docs.guzzlephp.org/en/stable/request-options.html
     */
 
-    'client' => [
-        \GuzzleHttp\RequestOptions::VERSION => 1.1, // You may test 3.0 in your platform.
+    'client' => array_merge_recursive([
+        \GuzzleHttp\RequestOptions::VERSION => 2.0,
+        // ...Add your config here.
     ],
+        // This will detect if your cURL version has HTTP/3 support and prioritize it.
+        defined('CURL_VERSION_HTTP3') && curl_version()['features'] & CURL_VERSION_HTTP3
+            ? ['curl' => [CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_3]]
+            : [],
+    ),
 
     /*
     |--------------------------------------------------------------------------

@@ -16,10 +16,8 @@ class InterstitialMiddleware
 {
     /**
      * The name of the middleware alias.
-     *
-     * @const string
      */
-    public const ALIAS = TurnstileMiddleware::ALIAS . '.interstitial';
+    public const string ALIAS = TurnstileMiddleware::ALIAS . '.interstitial';
 
     /**
      * Create a new middleware instance.

@@ -19,10 +19,8 @@ class TurnstileRule
 {
     /**
      * The name of the Turnstile rule.
-     *
-     * @const string
      */
-    public const NAME = 'turnstile';
+    public const string NAME = 'turnstile';
 
     /**
      * Create a new Rule instance.

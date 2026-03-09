@@ -1,6 +1,6 @@
 {
     "name": "laragear/turnstile",
-    "description": "Use Cloudflare's no-CAPTCHA alternative in your Laravel application.",
+    "description": "Use Cloudflare's no-CAPTCHA with HTTP/3 in your Laravel application.",
     "type": "library",
     "license": "MIT",
     "minimum-stability": "dev",
@@ -25,17 +25,17 @@
         "issues": "https://github.com/Laragear/Turnstile/issues"
     },
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-json": "*",
-        "illuminate/support": "11.*|12.*",
-        "illuminate/http": "11.*|12.*",
-        "illuminate/routing": "11.*|12.*",
-        "illuminate/container": "11.*|12.*",
-        "illuminate/events": "11.*|12.*",
-        "illuminate/session": "11.*|12.*"
+        "illuminate/support": "12.*|13.*",
+        "illuminate/http": "12.*|13.*",
+        "illuminate/routing": "12.*|13.*",
+        "illuminate/container": "12.*|13.*",
+        "illuminate/events": "12.*|13.*",
+        "illuminate/session": "12.*|13.*"
     },
     "require-dev": {
-        "orchestra/testbench": "9.*|10.*"
+        "orchestra/testbench": "10.*|11.*"
     },
     "autoload": {
         "psr-4": {

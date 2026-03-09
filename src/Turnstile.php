@@ -28,38 +28,28 @@ class Turnstile
 {
     /**
      * The Cloudflare Connecting IP present in the Header.
-     *
-     * @const string
      */
-    public const HEADER = 'CF-Connecting-IP';
+    public const string HEADER = 'CF-Connecting-IP';
 
     /**
      * The proper name for the Cloudflare Turnstile Challenge attribute.
-     *
-     * @const string
      */
-    public const ATTRIBUTE = 'Cloudflare Turnstile Challenge';
+    public const string ATTRIBUTE = 'Cloudflare Turnstile Challenge';
 
     /**
      * The default key where the Cloudflare Turnstile response is set.
-     *
-     * @const string
      */
-    public const KEY = 'cf-turnstile-response';
+    public const string KEY = 'cf-turnstile-response';
 
     /**
      * The Cloudflare Turnstile Site Verify endpoint.
-     *
-     * @const string
      */
-    protected const ENDPOINT = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    protected const string ENDPOINT = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
     /**
      * The format the date from the challenge should be parsed as.
-     *
-     * @const string
      */
-    protected const DATETIME_FORMAT = 'Y-m-d\TH:i:s.vP';
+    protected const string DATETIME_FORMAT = 'Y-m-d\TH:i:s.vP';
 
     /**
      * Create a new Turnstile instance.

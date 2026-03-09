@@ -26,7 +26,7 @@ class TurnstileMiddleware
      *
      * @const string
      */
-    public const ALIAS = 'turnstile';
+    public const string ALIAS = 'turnstile';
 
     /**
      * Create a new Middleware instance.
