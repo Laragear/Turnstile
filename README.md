@@ -564,7 +564,7 @@ $request->validate([
 ]);
 ```
 
-#### Rule accepts failed challenges 
+#### Rule accepts failed challenges
 
 The rule supports not checking if the challenge is successful by setting the `accept-failed` parameter. This can be useful to retrieve the response later and programmatically continue based on the response result through the `sucess()` and `failed()` methods of the `Turnstile` facade.
 
@@ -838,6 +838,83 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', 'turnstile.interstitial');
     })
     ->create();
+```
+
+## Livewire & Filament trait
+
+If you're using Liveware or Filament PHP, you may use the `Laragear\Turnstile\Livewire\InteractsWithTurnstile` trait in your Filament Pages or components.
+
+The trait will register a hook _after validation_, that only runs on non-Precognitive requests. This way, the Turnstile Challenge is consumed only when the form is completely validated. It also avoids using an idempotency key based on the request fingerprint, saving you a request to Cloudflare Turnstile servers.
+
+```php
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Pages\Page;
+use Filament\Schemas\Schema;
+use Laragear\Turnstile\Livewire\InteractsWithTurnstile;
+
+class MyCustomPage extends Page implements HasForms
+{
+    use InteractsWithForms;
+    use InteractsWithTurnstile;
+
+    public function form(Schema $schema) : Schema
+    {
+        return $schema->components([
+            // ...
+        ]);
+    }
+}
+```
+
+If you're using a custom challenge key in your form, you may override the `turnstileToken()` method to retrieve the value of the token.
+
+```php
+/**
+ * Return token for the Turnstile Challenge present in the form.
+ *
+ * @return string|null|void
+ */
+protected function turnstileToken(string $key)
+{
+    return $this->data['cloudflare-turnstile-token'];
+}
+```
+
+> [!IMPORTANT]
+> 
+> The trait injects the Turnstile challenge validation on all forms. If you need more customization, use the [`afterValidate()` hook](https://filamentphp.com/docs/5.x/resources/creating-records#lifecycle-hooks).
+
+### Handling the Turnstile Challenge
+
+You have access to some useful methods to handle if the challenge should be deemed successful or not, and how to handle successes and failures:
+
+* `skipTurnstileValidation()`: Returns if the challenge verification should run when authenticated.
+* `handleTurnstileChallengeStatus()`: Returns if the challenge is successful or not.
+* `handleSuccessfulTurnstileChallenge()`: Handle a successful Turnstile challenge.
+* `handleFailedTurnstileChallenge()`: Handle a failed Turnstile challenge.
+
+For example, for non-admins, you may check if the challenge is successful if it matches the component action:
+
+```php
+use Illuminate\Support\Str;
+use Laragear\Turnstile\Challenge;
+
+/**
+ * Check if the Turnstile challenge validation should be skipped if authenticated.
+ */
+protected function skipTurnstileValidation(): bool
+{
+    return auth('admins')->check();
+}
+
+/**
+ * Handles the Turnstile challenge and returns true or false if it has succeeded or failed.
+ */
+protected function handleTurnstileChallengeStatus(Challenge $challenge): bool
+{
+    return $challenge->successful && $challenge->isAction(Str::snake(static::class));
+}
 ```
 
 ## Advanced configuration

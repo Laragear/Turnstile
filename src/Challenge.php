@@ -2,9 +2,9 @@
 
 namespace Laragear\Turnstile;
 
+use Carbon\CarbonInterface;
 use ErrorException;
 use Illuminate\Support\Arr;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Stringable;
 use InvalidArgumentException;
 use function in_array;
@@ -84,7 +84,7 @@ readonly class Challenge
     }
 
     /**
-     * Check if the action is not the same as the developer expects.
+     * Check if the action is different from the developer expects.
      */
     public function isNotAction(string $action): bool
     {
@@ -110,7 +110,7 @@ readonly class Challenge
     }
 
     /**
-     * Checks if the Customer Data is not the same pattern as the developer expects.
+     * Checks if the Customer Data is a different pattern as the developer expects.
      *
      * @param  string|iterable<string>  $customerData
      */

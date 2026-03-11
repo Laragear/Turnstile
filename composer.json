@@ -35,6 +35,7 @@
         "illuminate/session": "12.*|13.*"
     },
     "require-dev": {
+        "filament/filament": "4.*|5.*",
         "orchestra/testbench": "10.*|11.*"
     },
     "autoload": {
