@@ -62,9 +62,6 @@ jobs:
           - 13.*
         dependencies: [ lowest, highest ]
         include-filament: [ true ]
-        exclude:
-          - laravel-constraint: "13.*"
-            include-filament: true
 
     steps:
       - name: Set up PHP
