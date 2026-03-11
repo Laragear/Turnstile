@@ -107,7 +107,7 @@ Finally, you can also set a custom callback name to be executed once the script 
 
 #### Site Key on JavaScript frontend
 
-If you put the script on the `<head>` part of your HTML view, you may set the `meta` attribute to render a `<meta>` tag alongside the script. This tag will contain your Turnstile site key so your JavaScript frontend can  retrieve use it to render the widget.
+If you put the script on the `<head>` part of your HTML view, you may set the `meta` attribute to render a `<meta>` tag alongside the script. This tag will contain your Turnstile site-key so your JavaScript frontend can use it to render the widget.
 
 ```blade
 <!DOCTYPE html>
@@ -161,11 +161,24 @@ Alternatively, you may set a custom name for the tag by setting a value to the `
 <meta name="my-custom-key" content="1x00000000000000000000AA" />
 ```
 
+#### Preconnect
+
+You can also add a [resource hint to Cloudflare servers](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/#2-optional-optimize-performance-with-resource-hints) by setting the `preconnect` attribute in the component.
+
+```blade
+<x-turnstile::script preconnect />
+```
+
+```html
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer async></script>
+<link rel="preconnect" href="https://challenges.cloudflare.com">
+```
+
 ### Widget
 
 > [!IMPORTANT]
 > 
-> Remember that the Widget Mode is controlled via your [Cloudflare Dashboard](https://dash.cloudflare.com), not here. On development, this is controlled with [testing keys](#testing-keys).
+> Remember that the Widget Mode is controlled via your [Cloudflare Dashboard](https://dash.cloudflare.com), not here. In development, this is controlled with [testing keys](#testing-keys).
 
 You can use the `<x-turnstile::widget />` Blade Component to add the Turnstile Widget in your forms. Depending on the Widget Mode, the Widget may render as usual or be invisible at Turnstile discretion.
 
@@ -840,42 +853,48 @@ return Application::configure(basePath: dirname(__DIR__))
     ->create();
 ```
 
-## Livewire & Filament trait
+## Livewire Trait
 
-If you're using Liveware or Filament PHP, you may use the `Laragear\Turnstile\Livewire\InteractsWithTurnstile` trait in your Filament Pages or components.
+If you're using Liveware, you may use the `Laragear\Turnstile\Livewire\InteractsWithTurnstile` trait in your Livewire pages or components, alongside the [widget](#widget) in your frontend.
 
-The trait will register a hook _after validation_, that only runs on non-Precognitive requests. This way, the Turnstile Challenge is consumed only when the form is completely validated. It also avoids using an idempotency key based on the request fingerprint, saving you a request to Cloudflare Turnstile servers.
+The trait overrides the `validate()` method the Component class, and validates the Turnstile Challenge only when all the validation rules pass.
 
 ```php
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Pages\Page;
-use Filament\Schemas\Schema;
+use App\Models\Ball;
 use Laragear\Turnstile\Livewire\InteractsWithTurnstile;
+use Livewire\Attributes\Rule;
+use Livewire\Component;
 
-class MyCustomPage extends Page implements HasForms
+class MyCustomPage extends Component
 {
-    use InteractsWithForms;
     use InteractsWithTurnstile;
+    
+    #[Rule('required')]
+    public $name;
+    
+    #[Rule('required')]
+    public $color;
 
-    public function form(Schema $schema) : Schema
+    public function save() : Schema
     {
-        return $schema->components([
-            // ...
-        ]);
+        $data = $this->validate();
+        
+        Ball::create($data);
     }
 }
 ```
 
-If you're using a custom challenge key in your form, you may override the `turnstileToken()` method to retrieve the value of the token.
+If you're using a custom challenge key in your form, you may override the `turnstileToken()` method to retrieve the value of the token form elsewhere.
 
 ```php
+public array $data = [];
+
 /**
  * Return token for the Turnstile Challenge present in the form.
  *
  * @return string|null|void
  */
-protected function turnstileToken(string $key)
+protected function turnstileToken()
 {
     return $this->data['cloudflare-turnstile-token'];
 }
@@ -883,13 +902,42 @@ protected function turnstileToken(string $key)
 
 > [!IMPORTANT]
 > 
-> The trait injects the Turnstile challenge validation on all forms. If you need more customization, use the [`afterValidate()` hook](https://filamentphp.com/docs/5.x/resources/creating-records#lifecycle-hooks).
+> The Challenge validation does not run when calling `validateOnly()`. In that case, you should [validate manually](#livewire-manual-validation)
+
+### Livewire manual validation
+
+To detach the automatic validation of the Challenge, you can use the `validatesTurnstileAutomatically()` method and return `false`. This way, calling `validate()` in your component won't _consume_ the challenge token.
+
+```php
+/**
+ * If the validation should be run automatically after validation.
+ */
+protected function validatesTurnstileAutomatically(): bool
+{
+    return false;
+}
+```
+
+After that, you may call `validateTurnstile()` manually in your component.
+
+```php
+public function create()
+{
+    $validated = $this->validate();
+    
+    // ...
+    
+    $this->validateTurnstile();
+    
+    Ball::create($validated);
+}
+```
 
 ### Handling the Turnstile Challenge
 
 You have access to some useful methods to handle if the challenge should be deemed successful or not, and how to handle successes and failures:
 
-* `skipTurnstileValidation()`: Returns if the challenge verification should run when authenticated.
+* `skipTurnstileValidation()`: Returns if the challenge verification should run or be skipped.
 * `handleTurnstileChallengeStatus()`: Returns if the challenge is successful or not.
 * `handleSuccessfulTurnstileChallenge()`: Handle a successful Turnstile challenge.
 * `handleFailedTurnstileChallenge()`: Handle a failed Turnstile challenge.
@@ -905,6 +953,7 @@ use Laragear\Turnstile\Challenge;
  */
 protected function skipTurnstileValidation(): bool
 {
+    // Do not run if the user is an admin.
     return auth('admins')->check();
 }
 
@@ -917,6 +966,62 @@ protected function handleTurnstileChallengeStatus(Challenge $challenge): bool
 }
 ```
 
+## Filament Widget Field
+
+If you're using Filament, you may use the `Laragear\Turnstile\Filament\Forms\TurnstileWidget` field in your forms. It will automatically inject the Turnstile Script in the page and render the Turnstile Widget. The Turnstile Challenge will be validated only on complete form submission.
+
+```php
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Pages\Page;
+use Filament\Schemas\Schema;
+use Laragear\Turnstile\Filament\Forms\TurnstileWidget;
+
+class ContactPage extends Page implements HasForms
+{
+    use InteractsWithForms;
+    
+    public function form(Schema $schema) : Schema
+    {
+        return $schema->components([
+            TextInput::make('subject')->required(),
+            Textarea::make('message')->required(),
+            // Add the Turnstile Widget
+            TurnstileWidget::make(),
+        ]);
+    }
+}
+```
+
+The Widget includes some convenient methods based on the [Cloudflare Turnstile Widget configuration](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/widget-configurations/):
+
+| Method                             | Description                                                            |
+|------------------------------------|------------------------------------------------------------------------|
+| `normal()`                         | Sets the size of the widget to normal.                                 |
+| `flexible()`                       | Sets the size of the widget to flexible.                               |
+| `compact()`                        | Sets the size of the widget to compact.                                |
+| `system()`                         | Sets the theme of the widget to system/browser default.                |
+| `light()`                          | Sets the theme of the widget to light.                                 |
+| `dark()`                           | Sets the theme of the widget to dark.                                  |
+| `appearanceAlways()`               | Sets the appearance of the widget to always appear.                    |
+| `appearanceExecute()`              | Sets the appearance of the widget to appear on manual execution.       |
+| `appearanceInteractionOnly()`      | Sets the appearance of the widget to appear only when required.        |
+| `executionRender()`                | Sets the execution of the widget challenge as it renders.              |
+| `executionExecute()`               | Sets the execution of the widget challenge on manual execution.        |
+| `languageAuto()`                   | Sets the language of the widget to browser locale.                     |
+| `language(string $lang)`           | Sets the language of the widget to given locale.                       |
+| `languageApp()`                    | Sets the language of the widget to application locale.                 |
+| `tabindex(int $tabindex)`          | Sets the tab order of the widget to one set.                           |
+| `callback(string $functionName)`   | Adds an additional function names to execute on successful challenges. |
+| `actionName(string $functionName)` | Sets the action name for the challenge.                                |
+| `implicit(bool $condition = true)` | Makes the widget be rendered automatically by the script.              |
+
+> [!IMPORTANT]
+>
+> The Filament Turnstile Widget is rendered **implicitly** by default, meaning its rendering is handled internally by AlpineJS. This makes all the options to be passed as a JavaScript object. You can use **explicit** rendering, but you may have problems if Livewire or Filament are configured to run in [SPA mode](https://filamentphp.com/docs/5.x/panel-configuration#spa-mode) or [use islands](https://livewire.laravel.com/docs/4.x/islands).
+ 
 ## Advanced configuration
 
 Laragear Turnstile is intended to work out-of-the-box, but you can publish the configuration file for fine-tuning the Challenge verification.

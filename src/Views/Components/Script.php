@@ -14,7 +14,7 @@ class Script extends Component
      *
      * @const string
      */
-    public const SOURCE = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    public const string SOURCE = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
 
     /**
      * Create a new Blade Component instance.
@@ -26,6 +26,7 @@ class Script extends Component
         public bool $async = true,
         public bool $defer = true,
         public string|bool $meta = false,
+        public bool $preconnect = false,
     )
     {
         //
@@ -49,11 +50,17 @@ class Script extends Component
 <script src="$source" {{ \$attributes }} {{ \implode(' ', \array_filter([\$defer ? 'defer' : '', \$async ? 'async' : '' ])) }}></script>
 HTML;
 
+            if ($this->preconnect) {
+                $script .= "\n" . <<<HTML
+<link rel="preconnect" href="https://challenges.cloudflare.com">
+HTML;
+
+            }
+
             if ($this->meta) {
                 $script .= "\n" . <<<HTML
 <meta name="{{ is_bool(\$meta) ? 'turnstile-sitekey' : \$meta }}" content="{$this->turnstile->getSiteKey()}" />
 HTML;
-
             }
 
             return $script;

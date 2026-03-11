@@ -2,35 +2,38 @@
 
 namespace Laragear\Turnstile\Livewire;
 
-use Filament\Notifications\Notification;
-use Illuminate\Contracts\Validation\Validator as ValidatorContract;
-use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Laragear\Turnstile\Challenge;
 use Laragear\Turnstile\Turnstile;
 use Throwable;
 use function __;
 use function app;
-use function request;
 
 trait InteractsWithTurnstile
 {
     /**
-     * Boots the trait.
+     * The CloudFlare Turnstile Response token.
      */
-    public function bootInteractsWithTurnstile(): void
+    public ?string $cfTurnstileResponse = null;
+
+    public function validate($rules = null, $messages = [], $attributes = [])
     {
-        $this->withValidator(function (ValidatorContract $validator): void {
-            $validator->after($this->validateTurnstile(...));
-        });
+        $validated = parent::validate($rules, $messages, $attributes);
+
+        // If the validation passes, validate Turnstile automatically
+        if ($this->validatesTurnstileAutomatically()) {
+            $this->validateTurnstile();
+        }
+
+        return $validated;
     }
 
     /**
-     * Check if the Turnstile challenge validation should be skipped.
+     * If the validation should be run automatically after validation.
      */
-    protected function skipTurnstileValidation(): bool
+    protected function validatesTurnstileAutomatically(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -38,7 +41,7 @@ trait InteractsWithTurnstile
      */
     protected function validateTurnstile(): void
     {
-        if ($this->skipTurnstileValidation() || request()->isPrecognitive()) {
+        if ($this->skipTurnstileValidation()) {
             return;
         }
 
@@ -49,7 +52,7 @@ trait InteractsWithTurnstile
             return;
         }
 
-        if (!$token = $this->turnstileToken($turnstile->key())) {
+        if (!$token = $this->turnstileToken()) {
             $this->handleFailedTurnstileChallenge();
         }
 
@@ -65,13 +68,19 @@ trait InteractsWithTurnstile
     }
 
     /**
-     * Return token for the Turnstile Challenge present in the form.
-     *
-     * @return string|null|void
+     * Check if the Turnstile challenge validation should be skipped.
      */
-    protected function turnstileToken(string $key)
+    protected function skipTurnstileValidation(): bool
     {
-        return Arr::get($this->data ?? $this->form?->getFormSnapshot(), $key);
+        return false;
+    }
+
+    /**
+     * Return token for the Turnstile Challenge present in the form.
+     */
+    protected function turnstileToken(): ?string
+    {
+        return $this->cfTurnstileResponse;
     }
 
     /**
@@ -103,20 +112,7 @@ trait InteractsWithTurnstile
      */
     protected function handleFailedTurnstileChallenge(?Challenge $challenge = null): void
     {
-        $this->notifyFailedTurnstileChallenge($challenge);
         $this->throwTurnstileValidationError($challenge);
-    }
-
-    /**
-     * Send a notification to the user if the challenge has failed.
-     */
-    protected function notifyFailedTurnstileChallenge(?Challenge $challenge = null): void
-    {
-        Notification::make('turnstile-challenge')
-            ->title(__('turnstile::notification.failed.title'))
-            ->body(__('turnstile::notification.failed.body'))
-            ->danger()
-            ->send();
     }
 
     /**

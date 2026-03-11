@@ -1,0 +1,3 @@
+parameters:
+    ignoreErrors:
+        - '#Trait Laragear\\Turnstile\\Livewire\\InteractsWithTurnstile is used zero times and is not analysed\.#'
