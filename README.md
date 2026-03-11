@@ -1,7 +1,7 @@
 # Turnstile
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/laragear/turnstile.svg)](https://packagist.org/packages/laragear/turnstile)
 [![Latest stable test run](https://github.com/Laragear/Turnstile/workflows/Tests/badge.svg)](https://github.com/Laragear/Turnstile/actions)
-[![Codecov coverage](https://codecov.io/gh/Laragear/Turnstile/branch/badge.svg?token=5U6BJUEA4T)](https://codecov.io/gh/Laragear/Turnstile)
+[![Codecov coverage](https://codecov.io/gh/Laragear/Turnstile/graph/badge.svg?token=KSLJW4JU1V)](https://codecov.io/gh/Laragear/Turnstile)
 [![Maintainability](https://qlty.sh/badges/c82a8142-06a9-4700-8eee-b6bab1e69087/maintainability.svg)](https://qlty.sh/gh/Laragear/projects/Turnstile)
 [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=Laragear_Turnstile&metric=alert_status)](https://sonarcloud.io/dashboard?id=Laragear_Turnstile)
 [![Laravel Octane Compatibility](https://img.shields.io/badge/Laravel%20Octane-Compatible-success?style=flat&logo=laravel)](https://laravel.com/docs/13.x/octane#introduction)
