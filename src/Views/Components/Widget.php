@@ -18,6 +18,7 @@ class Widget extends Component
         // ...
     }
 
+
     /**
      * Get the view / view contents that represent the component.
      *

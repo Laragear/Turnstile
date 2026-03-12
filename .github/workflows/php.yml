@@ -61,6 +61,7 @@ jobs:
           - 12.*
           - 13.*
         dependencies: [ lowest, highest ]
+        include-filament: [ true ]
 
     steps:
       - name: Set up PHP
@@ -72,6 +73,11 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v6
+
+      # Remove this once Filament PHP v5 gets Laravel 13 compatibility.
+      - name: Remove Filament for Laravel 13 compatibility
+        if: matrix.laravel-constraint == '13.*'
+        run: composer remove "filament/filament" --dev --no-update
 
       - name: Install dependencies
         uses: ramsey/composer-install@v3

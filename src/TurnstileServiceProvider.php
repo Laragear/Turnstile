@@ -14,10 +14,9 @@ use Illuminate\View\Compilers\BladeCompiler;
 class TurnstileServiceProvider extends ServiceProvider
 {
     // These constants point to publishable files/directories.
-    public const CONFIG = __DIR__.'/../config/turnstile.php';
-    public const LANG = __DIR__.'/../lang';
-    public const VIEWS = __DIR__.'/../resources/views';
-    public const CONTROLLERS = __DIR__.'/../stubs/controllers';
+    public const string CONFIG = __DIR__.'/../config/turnstile.php';
+    public const string LANG = __DIR__.'/../lang';
+    public const string VIEWS = __DIR__.'/../resources/views';
 
     /**
      * Register the application services.
@@ -55,7 +54,7 @@ class TurnstileServiceProvider extends ServiceProvider
             $this->publishes([static::VIEWS => $this->app->resourcePath('vendor/turnstile')], 'views');
         }
 
-        $this->callAfterResolving('blade.compiler', static function (BladeCompiler $blade): void {
+        $this->callAfterResolving(BladeCompiler::class, static function (BladeCompiler $blade): void {
             $blade->componentNamespace('Laragear\\Turnstile\\Views\\Components', 'turnstile');
         });
 

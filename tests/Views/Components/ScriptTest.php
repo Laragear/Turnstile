@@ -93,4 +93,27 @@ HTML,
                 false
             );
     }
+
+    public function test_renders_with_preconnect(): void
+    {
+        $this->render('<x-turnstile::script preconnect/>')
+            ->assertSee(<<<HTML
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"  defer async></script>
+<link rel="preconnect" href="https://challenges.cloudflare.com">
+HTML,
+                false
+            );
+    }
+
+    public function test_renders_with_meta_and_preconnect(): void
+    {
+        $this->render('<x-turnstile::script meta="test-name" preconnect/>')
+            ->assertSee(<<<HTML
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"  defer async></script>
+<link rel="preconnect" href="https://challenges.cloudflare.com">
+<meta name="test-name" content="1x00000000000000000000AA" />
+HTML,
+                false
+            );
+    }
 }
