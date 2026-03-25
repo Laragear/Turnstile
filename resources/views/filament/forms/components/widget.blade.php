@@ -116,7 +116,7 @@
                 }
 
                 // 2. Identify the script tag
-                const script = document.querySelector('script[src*='turnstile/v0/api.js']');
+                const script = document.querySelector(`script[src*='turnstile/v0/api.js']`);
 
                 // If the script tag exists but turnstile isn't ready, listen for the load event.
                 if (script) {
@@ -125,7 +125,7 @@
                 // 3. Fallback: If the script isn't even in the DOM yet, observe the <head>
                 {
                     const observer = new MutationObserver((mutations, obs) => {
-                        const addedScript = document.querySelector('script[src*='turnstile/v0/api.js']');
+                        const addedScript = document.querySelector(`script[src*='turnstile/v0/api.js']`);
 
                         if (addedScript) {
                             addedScript.addEventListener('load', () => this._renderExplicit(), { once: true });
@@ -138,7 +138,6 @@
             },
 
             _renderExplicit() {
-                this.widgetId = turnstile.render(this.$refs.widget, {
                     {{-- --------------------------------------------------------
                          Forward all PHP-side data attributes as render options,
                          translating the internal 'field-name' key to Cloudflare's
@@ -146,28 +145,32 @@
                          Turnstile injects uses the correct name on non-Livewire
                          (traditional POST) form submissions as well.
                     --------------------------------------------------------- --}}
-                    @foreach ($getDataAttributes() as $key => $value)
-                        @if ($key === 'field-name')
-                            'response-field-name': @js($value),
-                        @elseif ($key === 'callback')
-                            {{-- User-supplied extra callback; still call it after
-                                 we store the token in our local state. --}}
-                            callback: (t) => {
-                                this.token = t;
-                                if (typeof window[@js($value)] === 'function') {
-                                    window[@js($value)](t);
-                                }
-                            },
-                        @else
-                            @js($key): @js($value),
-                        @endif
-                    @endforeach
-                    @unless (isset($getDataAttributes()['callback']))
-                        callback: (t) => { this.token = t; },
-                    @endunless
-                    'expired-callback': () => { this.token = null; this._reset(); },
-                    'error-callback':   () => { this.token = null; },
-                });
+                @php
+                    $renderOpts = [];
+                    $customCallback = null;
+                    foreach ($getDataAttributes() as $key => $value) {
+                        if ($key === 'field-name') {
+                            $renderOpts['response-field-name'] = $value;
+                        } elseif ($key === 'callback') {
+                            $customCallback = $value;
+                        } else {
+                            $renderOpts[$key] = $value;
+                        }
+                    }
+                @endphp
+                const opts = @js($renderOpts);
+                const customCb = @js($customCallback);
+
+                opts.callback = (t) => {
+                    this.token = t;
+                    if (customCb && typeof window[customCb] === 'function') {
+                        window[customCb](t);
+                    }
+                };
+                opts['expired-callback'] = () => { this.token = null; this._reset(); };
+                opts['error-callback']   = () => { this.token = null; };
+
+                this.widgetId = turnstile.render(this.$refs.widget, opts);
             },
 
             /**
