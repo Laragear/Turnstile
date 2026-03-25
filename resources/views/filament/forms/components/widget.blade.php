@@ -38,13 +38,30 @@
         capture the token without blocking the auto-discovery flow.
 
 --}}
+@php
+    $isExplicitMode = $isExplicit();
+    $fieldId = $getId();
+    $statePath = $getStatePath();
+    $dataAttrs = $getDataAttributes();
+    $hasCustomCallback = isset($dataAttrs['callback']);
+    $customCallbackName = $dataAttrs['callback'] ?? null;
+
+    $renderOptions = [];
+    foreach ($dataAttrs as $key => $value) {
+        if ($key === 'field-name') {
+            $renderOptions['response-field-name'] = $value;
+        } elseif ($key !== 'callback') {
+            $renderOptions[$key] = $value;
+        }
+    }
+@endphp
 <x-dynamic-component
     :component="$getFieldWrapperView()"
     :field="$field"
 >
     <div
         x-data="{
-            token:       null,
+            token:       $wire.entangle(@js($statePath)),
             widgetId:    null,
             _removeHook: null,
 
@@ -52,21 +69,17 @@
              * Lifecycle
              */
             init() {
-                @if($isExplicit())
-                    this._mountExplicit();
-                @else
-                    this._mountImplicit();
-                @endif
-
                 // Allow external code (like after a failed submission) to reset
                 // the widget via a custom DOM event or a global window event.
+                {{ $isExplicitMode ? 'this._mountExplicit();' : 'this._mountImplicit();' }}
+
                 this.$el.addEventListener('turnstile:reset', () => this._reset());
                 window.addEventListener('reset-turnstile',  () => this._reset());
 
                 // Scope the commit hook to our Livewire component only.
                 const wireEl = this.$el.closest('[wire\\:id]');
                 const wireId = wireEl ? wireEl.getAttribute('wire:id') : null;
-                const path   = @js($getStatePath());
+                const path   = @js($statePath);
 
                 if (wireId && window.Livewire) {
                     this._removeHook = Livewire.hook('commit', ({ component, commit }) => {
@@ -98,17 +111,11 @@
                     this._removeHook();
                 }
 
-                @unless ($isExplicit())
-                    // Clean up implicit-mode global callbacks.
-                    delete window['_turnstileToken_{{ $getId() }}'];
-                    delete window['_turnstileExpired_{{ $getId() }}'];
-                    delete window['_turnstileError_{{ $getId() }}'];
-                @endunless
+                {{ $isExplicitMode ? '' : "delete window['_turnstileToken_{$fieldId}'];
+                    delete window['_turnstileExpired_{$fieldId}'];
+                    delete window['_turnstileError_{$fieldId}'];" }}
             },
 
-            /**
-             * Explicit rendering  (default)
-             */
             _mountExplicit() {
                 // 1. Instant check: If it's already here, just run.
                 if (window.turnstile) {
@@ -145,21 +152,8 @@
                          Turnstile injects uses the correct name on non-Livewire
                          (traditional POST) form submissions as well.
                     --------------------------------------------------------- --}}
-                @php
-                    $renderOpts = [];
-                    $customCallback = null;
-                    foreach ($getDataAttributes() as $key => $value) {
-                        if ($key === 'field-name') {
-                            $renderOpts['response-field-name'] = $value;
-                        } elseif ($key === 'callback') {
-                            $customCallback = $value;
-                        } else {
-                            $renderOpts[$key] = $value;
-                        }
-                    }
-                @endphp
-                const opts = @js($renderOpts);
-                const customCb = @js($customCallback);
+                const opts = @js($renderOptions);
+                const customCb = {{ $hasCustomCallback ? '@js($customCallbackName)' : 'null' }};
 
                 opts.callback = (t) => {
                     this.token = t;
@@ -181,9 +175,9 @@
                 // script can call once it has auto-discovered the .cf-turnstile
                 // div. Using the field's unique ID avoids collisions when
                 // multiple Turnstile widgets appear on the same page.
-                window['_turnstileToken_{{ $getId() }}']   = (t)  => { this.token = t;    };
-                window['_turnstileExpired_{{ $getId() }}']  = ()   => { this.token = null; this._reset(); };
-                window['_turnstileError_{{ $getId() }}']    = ()   => { this.token = null; };
+                window['_turnstileToken_{{ $fieldId }}']   = (t)  => { this.token = t;    };
+                window['_turnstileExpired_{{ $fieldId }}']  = ()   => { this.token = null; this._reset(); };
+                window['_turnstileError_{{ $fieldId }}']    = ()   => { this.token = null; };
             },
 
             // -----------------------------------------------------------------
