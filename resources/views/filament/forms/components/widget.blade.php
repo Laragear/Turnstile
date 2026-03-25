@@ -116,6 +116,9 @@
                     delete window['_turnstileError_{$fieldId}'];" }}
             },
 
+            /**
+             * Explicit rendering  (default)
+             */
             _mountExplicit() {
                 // 1. Instant check: If it's already here, just run.
                 if (window.turnstile) {
