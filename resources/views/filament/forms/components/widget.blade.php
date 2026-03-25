@@ -69,10 +69,10 @@
              * Lifecycle
              */
             init() {
-                // Allow external code (like after a failed submission) to reset
-                // the widget via a custom DOM event or a global window event.
                 {{ $isExplicitMode ? 'this._mountExplicit();' : 'this._mountImplicit();' }}
 
+                // Allow external code (like after a failed submission) to reset
+                // the widget via a custom DOM event or a global window event.
                 this.$el.addEventListener('turnstile:reset', () => this._reset());
                 window.addEventListener('reset-turnstile',  () => this._reset());
 
