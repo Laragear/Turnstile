@@ -38,13 +38,30 @@
         capture the token without blocking the auto-discovery flow.
 
 --}}
+@php
+    $isExplicitMode = $isExplicit();
+    $fieldId = $getId();
+    $statePath = $getStatePath();
+    $dataAttrs = $getDataAttributes();
+    $hasCustomCallback = isset($dataAttrs['callback']);
+    $customCallbackName = $dataAttrs['callback'] ?? null;
+
+    $renderOptions = [];
+    foreach ($dataAttrs as $key => $value) {
+        if ($key === 'field-name') {
+            $renderOptions['response-field-name'] = $value;
+        } elseif ($key !== 'callback') {
+            $renderOptions[$key] = $value;
+        }
+    }
+@endphp
 <x-dynamic-component
     :component="$getFieldWrapperView()"
     :field="$field"
 >
     <div
         x-data="{
-            token:       null,
+            token:       $wire.entangle(@js($statePath)),
             widgetId:    null,
             _removeHook: null,
 
@@ -52,11 +69,7 @@
              * Lifecycle
              */
             init() {
-                @if($isExplicit())
-                    this._mountExplicit();
-                @else
-                    this._mountImplicit();
-                @endif
+                {{ $isExplicitMode ? 'this._mountExplicit();' : 'this._mountImplicit();' }}
 
                 // Allow external code (like after a failed submission) to reset
                 // the widget via a custom DOM event or a global window event.
@@ -66,7 +79,7 @@
                 // Scope the commit hook to our Livewire component only.
                 const wireEl = this.$el.closest('[wire\\:id]');
                 const wireId = wireEl ? wireEl.getAttribute('wire:id') : null;
-                const path   = @js($getStatePath());
+                const path   = @js($statePath);
 
                 if (wireId && window.Livewire) {
                     this._removeHook = Livewire.hook('commit', ({ component, commit }) => {
@@ -98,12 +111,9 @@
                     this._removeHook();
                 }
 
-                @unless ($isExplicit())
-                    // Clean up implicit-mode global callbacks.
-                    delete window['_turnstileToken_{{ $getId() }}'];
-                    delete window['_turnstileExpired_{{ $getId() }}'];
-                    delete window['_turnstileError_{{ $getId() }}'];
-                @endunless
+                {{ $isExplicitMode ? '' : "delete window['_turnstileToken_{$fieldId}'];
+                    delete window['_turnstileExpired_{$fieldId}'];
+                    delete window['_turnstileError_{$fieldId}'];" }}
             },
 
             /**
@@ -116,7 +126,7 @@
                 }
 
                 // 2. Identify the script tag
-                const script = document.querySelector('script[src*='turnstile/v0/api.js']');
+                const script = document.querySelector(`script[src*='turnstile/v0/api.js']`);
 
                 // If the script tag exists but turnstile isn't ready, listen for the load event.
                 if (script) {
@@ -125,7 +135,7 @@
                 // 3. Fallback: If the script isn't even in the DOM yet, observe the <head>
                 {
                     const observer = new MutationObserver((mutations, obs) => {
-                        const addedScript = document.querySelector('script[src*='turnstile/v0/api.js']');
+                        const addedScript = document.querySelector(`script[src*='turnstile/v0/api.js']`);
 
                         if (addedScript) {
                             addedScript.addEventListener('load', () => this._renderExplicit(), { once: true });
@@ -138,7 +148,6 @@
             },
 
             _renderExplicit() {
-                this.widgetId = turnstile.render(this.$refs.widget, {
                     {{-- --------------------------------------------------------
                          Forward all PHP-side data attributes as render options,
                          translating the internal 'field-name' key to Cloudflare's
@@ -146,28 +155,19 @@
                          Turnstile injects uses the correct name on non-Livewire
                          (traditional POST) form submissions as well.
                     --------------------------------------------------------- --}}
-                    @foreach ($getDataAttributes() as $key => $value)
-                        @if ($key === 'field-name')
-                            'response-field-name': @js($value),
-                        @elseif ($key === 'callback')
-                            {{-- User-supplied extra callback; still call it after
-                                 we store the token in our local state. --}}
-                            callback: (t) => {
-                                this.token = t;
-                                if (typeof window[@js($value)] === 'function') {
-                                    window[@js($value)](t);
-                                }
-                            },
-                        @else
-                            @js($key): @js($value),
-                        @endif
-                    @endforeach
-                    @unless (isset($getDataAttributes()['callback']))
-                        callback: (t) => { this.token = t; },
-                    @endunless
-                    'expired-callback': () => { this.token = null; this._reset(); },
-                    'error-callback':   () => { this.token = null; },
-                });
+                const opts = @js($renderOptions);
+                const customCb = {{ $hasCustomCallback ? '@js($customCallbackName)' : 'null' }};
+
+                opts.callback = (t) => {
+                    this.token = t;
+                    if (customCb && typeof window[customCb] === 'function') {
+                        window[customCb](t);
+                    }
+                };
+                opts['expired-callback'] = () => { this.token = null; this._reset(); };
+                opts['error-callback']   = () => { this.token = null; };
+
+                this.widgetId = turnstile.render(this.$refs.widget, opts);
             },
 
             /**
@@ -178,9 +178,9 @@
                 // script can call once it has auto-discovered the .cf-turnstile
                 // div. Using the field's unique ID avoids collisions when
                 // multiple Turnstile widgets appear on the same page.
-                window['_turnstileToken_{{ $getId() }}']   = (t)  => { this.token = t;    };
-                window['_turnstileExpired_{{ $getId() }}']  = ()   => { this.token = null; this._reset(); };
-                window['_turnstileError_{{ $getId() }}']    = ()   => { this.token = null; };
+                window['_turnstileToken_{{ $fieldId }}']   = (t)  => { this.token = t;    };
+                window['_turnstileExpired_{{ $fieldId }}']  = ()   => { this.token = null; this._reset(); };
+                window['_turnstileError_{{ $fieldId }}']    = ()   => { this.token = null; };
             },
 
             // -----------------------------------------------------------------
