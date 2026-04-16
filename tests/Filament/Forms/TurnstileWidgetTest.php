@@ -511,7 +511,8 @@ class TurnstileWidgetTest extends TestCase
     public function test_explicit_mode_renders_default_alpine_callback_when_no_user_callback_is_set(): void
     {
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml('callback: (t) => { this.token = t; }');
+            ->assertSeeHtml('opts.callback = (t) => {')
+            ->assertSeeHtml('this.token = t');
     }
 
     // When a user callback IS configured, the default short form must NOT be
@@ -548,7 +549,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'response-field-name'")
+            ->assertSeeHtml('response-field-name')
             ->assertSeeHtml('my-captcha')
             ->assertDontSeeHtml('data-field-name');
     }
@@ -571,7 +572,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'size': 'flexible'");
+            ->assertSeeHtml('size\u0022:\u0022flexible');
     }
 
     public function test_explicit_mode_emits_dark_theme_as_js_render_option(): void
@@ -581,7 +582,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'theme': 'dark'");
+            ->assertSeeHtml('theme\u0022:\u0022dark');
     }
 
     public function test_explicit_mode_emits_language_as_js_render_option(): void
@@ -591,7 +592,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'language': 'ja'");
+            ->assertSeeHtml('language\u0022:\u0022ja');
     }
 
     public function test_explicit_mode_emits_action_as_js_render_option(): void
@@ -601,7 +602,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'action': 'register'");
+            ->assertSeeHtml('action\u0022:\u0022register');
     }
 
     public function test_explicit_mode_emits_tabindex_as_js_render_option(): void
@@ -611,7 +612,7 @@ class TurnstileWidgetTest extends TestCase
         ];
 
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml("'tabindex': 2");
+            ->assertSeeHtml('tabindex\u0022:2');
     }
 
     public function test_explicit_mode_emits_expired_and_error_callbacks(): void
@@ -888,11 +889,11 @@ class TurnstileWidgetTest extends TestCase
             ->assertSeeHtml('_removeHook');
     }
 
-    // Alpine's local token state must be initialized to null (not entangled).
+    // Alpine's local token state must be entangled with the Livewire state path.
     public function test_alpine_token_state_is_initialised_to_null(): void
     {
         Livewire::test(TurnstileWidgetPage::class)
-            ->assertSeeHtml('token:       null');
+            ->assertSeeHtml('token:       $wire.entangle(');
     }
 
     /*

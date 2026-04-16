@@ -156,7 +156,7 @@
                          (traditional POST) form submissions as well.
                     --------------------------------------------------------- --}}
                 const opts = @js($renderOptions);
-                const customCb = {{ $hasCustomCallback ? '@js($customCallbackName)' : 'null' }};
+                const customCb = {!! $hasCustomCallback ? \Illuminate\Support\Js::from($customCallbackName) : 'null' !!};
 
                 opts.callback = (t) => {
                     this.token = t;
